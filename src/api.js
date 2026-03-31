@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = '/api';
 const API_KEY = import.meta.env.VITE_API_KEY || 'song_app_secret_123';
 
 export const fetchSongs = async () => {

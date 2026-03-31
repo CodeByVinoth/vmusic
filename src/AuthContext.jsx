@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (username, password) => {
     setError(null);
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const apiBaseUrl = '/api';
     try {
       const response = await axios.post(`${apiBaseUrl}/admin/login`, {
         username,

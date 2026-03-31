@@ -4,7 +4,7 @@ import { Upload, Link as LinkIcon, CheckCircle, XCircle, Loader2, LogOut, Search
 import { useMusic } from '../MusicContext';
 import { useAuth } from '../AuthContext';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/admin';
+const API_URL = '/api/admin';
 const API_KEY = import.meta.env.VITE_API_KEY || 'song_app_secret_123';
 
 export const AdminPage = () => {

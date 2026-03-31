@@ -13,6 +13,7 @@ const GITHUB_OWNER = process.env.GITHUB_OWNER;
 const GITHUB_REPO = process.env.GITHUB_REPO;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+const API_BASE_URL = process.env.API_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5000');
 
 // --- AUTHENTICATION ---
 
@@ -120,7 +121,7 @@ router.post('/upload-local', protectAdmin, upload.single('file'), async (req, re
       song: {
         id: uploadResponse.data.content.sha,
         title: originalName.replace(/\.[^/.]+$/, "").replace(/_/g, ' '),
-        url: `${process.env.API_BASE_URL || 'http://localhost:5000'}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY || 'song_app_secret_123'}`
+        url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY || 'song_app_secret_123'}`
       }
     });
   } catch (error) {
@@ -227,7 +228,7 @@ router.post('/download', protectAdmin, async (req, res) => {
       song: {
         id: uploadResponse.data.content.sha,
         title: cleanTitle,
-        url: `${process.env.API_BASE_URL || 'http://localhost:5000'}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY || 'song_app_secret_123'}`
+        url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY || 'song_app_secret_123'}`
       }
     });
 
