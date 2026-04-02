@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMusic } from '../MusicContext';
 import { useAuth } from '../AuthContext';
 import { SongCard } from './SongCard';
@@ -6,10 +6,15 @@ import { AdminPage } from '../pages/AdminPage';
 import { LoginPage } from '../pages/LoginPage';
 import { Search as SearchIcon, Heart, AlertCircle, RefreshCw, Clock, Hash } from 'lucide-react';
 
-export const MainView = () => {
-  const { currentView, songs, likedSongs, playlists, selectedPlaylistId, isLoading, error, refreshSongs } = useMusic();
+export const MainView = ({ activeTab }) => {
+  const { currentView, setView, songs, likedSongs, playlists, selectedPlaylistId, isLoading, error, refreshSongs } = useMusic();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sync mobile activeTab with currentView
+  useEffect(() => {
+    if (activeTab) setView(activeTab);
+  }, [activeTab, setView]);
 
   const filteredSongs = songs.filter(s => 
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -23,85 +28,87 @@ export const MainView = () => {
   };
 
   return (
-    <div className="flex-1 bg-transparent text-white p-4 md:p-8 overflow-y-auto h-full relative scroll-smooth">
-      <div className="relative z-10 max-w-7xl mx-auto">
+    <div className="flex-1 bg-transparent text-white p-4 md:p-8 overflow-y-auto h-full relative scroll-smooth custom-scrollbar">
+      <div className="relative z-10 max-w-7xl mx-auto pb-32 md:pb-8">
         
+        {/* --- MOBILE SEARCH BAR (Top Fixed) --- */}
+        {currentView === 'search' && (
+          <div className="md:hidden sticky top-0 z-30 bg-[#0a0a0a]/80 backdrop-blur-md -mx-4 px-4 py-3 mb-6 border-b border-white/5 animate-slide-down">
+            <div className="relative group">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent-primary transition-colors" size={18} />
+              <input 
+                type="text" 
+                placeholder="What do you want to listen to?" 
+                className="w-full bg-white/5 border border-transparent focus:border-accent-primary/50 text-white py-2.5 pl-10 pr-4 rounded-full text-sm outline-none transition-all placeholder:text-text-secondary/50 shadow-inner"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+
         {/* --- HOME VIEW --- */}
         {currentView === 'home' && (
           <div className="flex flex-col gap-6 md:gap-8 animate-fade-in">
             <header className="flex flex-col gap-2">
-              <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white">
+              <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white bg-clip-text text-transparent bg-gradient-to-br from-white to-white/60">
                 Discover
               </h1>
-              <div className="h-1 w-12 md:w-16 bg-accent-primary rounded-full" />
+              <div className="h-1 w-12 md:w-16 bg-accent-primary rounded-full shadow-[0_0_10px_rgba(29,185,84,0.5)]" />
             </header>
-            
-            {error ? (
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center gap-6 glass-effect rounded-2xl border-red-500/20">
-                <div className="p-4 bg-red-500/10 rounded-full">
-                  <AlertCircle size={40} className="text-red-500" />
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+              {isLoading ? (
+                Array(10).fill(0).map((_, i) => <SongCardSkeleton key={i} />)
+              ) : error ? (
+                <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 glass-effect rounded-3xl border border-white/5">
+                  <AlertCircle size={48} className="text-red-500/50" />
+                  <p className="text-text-secondary font-medium">{error}</p>
+                  <button onClick={handleRetry} className="flex items-center gap-2 px-6 py-2 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform active:scale-95 shadow-lg">
+                    <RefreshCw size={18} />
+                    Try Again
+                  </button>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold mb-2 text-white">System Error</h2>
-                  <p className="text-text-secondary max-w-md">{error}</p>
-                </div>
-                <button 
-                  onClick={handleRetry}
-                  className="px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-accent-primary hover:text-white transition-colors flex items-center gap-2"
-                >
-                  <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-                  Retry
-                </button>
-              </div>
-            ) : isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {[...Array(10)].map((_, i) => (
-                  <div key={i} className="glass-effect p-4 rounded-xl animate-pulse">
-                    <div className="aspect-square bg-white/10 rounded-lg mb-4"></div>
-                    <div className="h-4 bg-white/10 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-white/10 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            ) : songs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-32 glass-effect rounded-2xl border-dashed border-white/10">
-                <SearchIcon size={48} className="text-white/20 mb-4" />
-                <p className="text-xl font-bold text-white/40">No songs found</p>
-                <p className="text-text-secondary text-sm mt-2">Upload tracks in Admin to begin.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-32">
-                {songs.map(song => (
-                  <SongCard key={song.id} song={song} />
-                ))}
-              </div>
-            )}
+              ) : songs.length > 0 ? (
+                songs.map((song) => <SongCard key={song.id} song={song} />)
+              ) : (
+                <div className="col-span-full py-20 text-center opacity-50 font-medium">No songs found in your library.</div>
+              )}
+            </div>
           </div>
         )}
 
         {/* --- SEARCH VIEW --- */}
         {currentView === 'search' && (
-          <div className="flex flex-col gap-8 animate-fade-in">
-            <div className="relative group max-w-2xl">
-              <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent-primary transition-colors" size={24} />
-              <input
-                type="text"
-                placeholder="Search songs, artists..."
-                className="w-full glass-effect text-white py-4 pl-14 pr-6 rounded-xl text-lg outline-none focus:border-accent-primary transition-colors placeholder:text-text-secondary"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {filteredSongs.length > 0 ? (
-                filteredSongs.map(song => (
-                  <SongCard key={song.id} song={song} />
-                ))
-              ) : searchQuery && (
-                <div className="col-span-full py-20 text-center">
-                  <h2 className="text-2xl font-bold text-text-secondary">No results for "{searchQuery}"</h2>
+          <div className="flex flex-col gap-6 md:gap-8 animate-fade-in">
+            <header className="hidden md:flex flex-col gap-2">
+              <h1 className="text-5xl font-black tracking-tighter text-white">Search</h1>
+              <div className="h-1 w-16 bg-accent-primary rounded-full" />
+              <div className="mt-6 relative max-w-xl group">
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent-primary transition-colors" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Search songs or artists..." 
+                  className="w-full bg-white/5 border border-white/5 focus:border-accent-primary/50 text-white py-4 pl-12 pr-6 rounded-2xl text-lg outline-none transition-all shadow-2xl"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </header>
+
+            <div className="flex flex-col gap-2">
+              {searchQuery ? (
+                filteredSongs.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                    {filteredSongs.map((song) => <SongCard key={song.id} song={song} />)}
+                  </div>
+                ) : (
+                  <div className="py-20 text-center text-text-secondary font-medium italic">No results for "{searchQuery}"</div>
+                )
+              ) : (
+                <div className="py-20 flex flex-col items-center justify-center gap-4 text-text-secondary">
+                  <SearchIcon size={64} className="opacity-10" />
+                  <p className="font-medium">Search for your favorite tracks</p>
                 </div>
               )}
             </div>
@@ -110,79 +117,53 @@ export const MainView = () => {
 
         {/* --- LIKED SONGS VIEW --- */}
         {currentView === 'liked' && (
-          <div className="flex flex-col gap-8 animate-fade-in">
-            <div className="flex flex-col md:flex-row items-end gap-6 glass-effect p-8 rounded-2xl">
-              <div className="w-48 h-48 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center rounded-xl shadow-lg">
-                <Heart size={80} fill="white" />
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">Playlist</span>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter">Liked Songs</h1>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-sm font-bold text-white">{user?.username || 'User'}</span>
-                  <span className="text-sm text-text-secondary">• {likedSongs.length} songs</span>
+          <div className="flex flex-col gap-6 md:gap-8 animate-fade-in">
+            <header className="flex flex-col gap-2">
+              <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white flex items-center gap-4">
+                Liked Songs
+                <Heart size={32} className="text-accent-primary fill-accent-primary animate-pulse-slow" />
+              </h1>
+              <div className="h-1 w-12 md:w-16 bg-accent-primary rounded-full" />
+            </header>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+              {likedSongs.length > 0 ? (
+                likedSongs.map((song) => <SongCard key={song.id} song={song} />)
+              ) : (
+                <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 glass-effect rounded-3xl border border-white/5">
+                  <Heart size={48} className="text-white/10" />
+                  <p className="text-text-secondary font-medium">Songs you like will appear here</p>
                 </div>
-              </div>
-            </div>
-            
-            <div className="glass-effect rounded-2xl overflow-hidden mb-32">
-              <div className="grid grid-cols-[48px_1fr_100px] gap-4 px-8 py-4 text-text-secondary text-xs font-bold uppercase tracking-wider border-b border-white/10">
-                <span className="flex items-center"><Hash size={16} /></span>
-                <span>Title</span>
-                <span className="text-right flex items-center justify-end"><Clock size={16} /></span>
-              </div>
-              <div className="p-2">
-                {likedSongs.length > 0 ? (
-                  likedSongs.map((song, index) => (
-                    <SongRow key={song.id} song={song} index={index + 1} />
-                  ))
-                ) : (
-                  <div className="py-20 text-center text-text-secondary">No liked songs yet.</div>
-                )}
-              </div>
+              )}
             </div>
           </div>
         )}
 
         {/* --- PLAYLIST VIEW --- */}
         {currentView === 'playlist' && selectedPlaylist && (
-          <div className="flex flex-col gap-8 animate-fade-in">
-            <div className="flex flex-col md:flex-row items-end gap-6 glass-effect p-8 rounded-2xl">
-              <div className="w-48 h-48 bg-white/10 flex items-center justify-center rounded-xl shadow-lg">
-                 <span className="text-8xl font-black text-white/50 uppercase">{selectedPlaylist.name[0]}</span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">Playlist</span>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter">{selectedPlaylist.name}</h1>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-sm font-bold text-white">{user?.username || 'User'}</span>
-                  <span className="text-sm text-text-secondary">• {selectedPlaylist.songs.length} songs</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="glass-effect rounded-2xl overflow-hidden mb-32">
-              <div className="grid grid-cols-[48px_1fr_120px] gap-4 px-8 py-4 text-text-secondary text-xs font-bold uppercase tracking-wider border-b border-white/10">
-                <span>#</span>
-                <span>Title</span>
-                <span className="text-right">Actions</span>
-              </div>
-              <div className="p-2">
-                {selectedPlaylist.songs.length > 0 ? (
-                  selectedPlaylist.songs.map((song, index) => (
-                    <SongRow key={song.id} song={song} index={index + 1} playlistId={selectedPlaylist.id} />
-                  ))
-                ) : (
-                  <div className="py-20 text-center text-text-secondary">This playlist is empty.</div>
-                )}
-              </div>
+          <div className="flex flex-col gap-6 md:gap-8 animate-fade-in">
+            <header className="flex flex-col gap-2">
+              <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white">
+                {selectedPlaylist.name}
+              </h1>
+              <div className="h-1 w-12 md:w-16 bg-accent-primary rounded-full" />
+              <p className="text-text-secondary font-bold uppercase text-xs tracking-widest mt-2">{selectedPlaylist.songs.length} Tracks</p>
+            </header>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+              {selectedPlaylist.songs.length > 0 ? (
+                selectedPlaylist.songs.map((song) => <SongCard key={song.id} song={song} />)
+              ) : (
+                <div className="col-span-full py-20 text-center text-text-secondary italic font-medium glass-effect rounded-3xl border border-white/5">This playlist is empty.</div>
+              )}
             </div>
           </div>
         )}
 
+        {/* --- ADMIN VIEW --- */}
         {currentView === 'admin' && (
           <div className="animate-fade-in">
-            {user ? <AdminPage /> : <LoginPage />}
+            <AdminPage />
           </div>
         )}
       </div>
@@ -190,66 +171,10 @@ export const MainView = () => {
   );
 };
 
-const SongRow = ({ song, index, playlistId }) => {
-  const { setCurrentSong, setIsPlaying, toggleLike, likedSongs, removeFromPlaylist, currentSong, isPlaying } = useMusic();
-  const isLiked = likedSongs.some(s => s.id === song.id);
-  const isCurrent = currentSong?.id === song.id;
-
-  return (
-    <div 
-      className={`group grid grid-cols-[48px_1fr_120px] items-center gap-4 px-6 py-3 rounded-lg transition-colors cursor-pointer ${
-        isCurrent ? 'bg-white/10' : 'hover:bg-white/5'
-      }`}
-      onClick={() => {
-        setCurrentSong(song);
-        setIsPlaying(true);
-      }}
-    >
-      <div className="flex items-center justify-center">
-        {isCurrent && isPlaying ? (
-          <div className="flex items-end gap-0.5 h-4">
-            <div className="w-1 bg-accent-primary animate-[bounce_0.6s_infinite] h-full" />
-            <div className="w-1 bg-accent-primary animate-[bounce_0.8s_infinite] h-2/3" />
-            <div className="w-1 bg-accent-primary animate-[bounce_0.5s_infinite] h-1/2" />
-          </div>
-        ) : (
-          <span className={`text-sm font-bold tabular-nums ${isCurrent ? 'text-accent-primary' : 'text-text-secondary group-hover:text-white'}`}>{index}</span>
-        )}
-      </div>
-      
-      <div className="flex items-center gap-4 overflow-hidden">
-        <img src={song.thumbnail} alt={song.title} className="w-10 h-10 object-cover rounded" />
-        <div className="flex flex-col overflow-hidden">
-          <h4 className={`font-bold truncate text-sm ${isCurrent ? 'text-accent-primary' : 'text-white'}`}>{song.title}</h4>
-          <p className="text-xs text-text-secondary truncate">
-            {song.artist || 'Unknown Artist'}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex justify-end items-center gap-4">
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleLike(song);
-          }}
-          className={`transition-transform hover:scale-110 ${isLiked ? 'text-accent-primary' : 'text-text-secondary opacity-0 group-hover:opacity-100 hover:text-white'}`}
-        >
-          <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
-        </button>
-        
-        {playlistId && (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              removeFromPlaylist(playlistId, song.id);
-            }}
-            className="text-xs font-bold text-text-secondary hover:text-red-500 opacity-0 group-hover:opacity-100 transition-colors"
-          >
-            Remove
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
+const SongCardSkeleton = () => (
+  <div className="glass-effect p-3 md:p-4 rounded-2xl border border-white/5 animate-pulse">
+    <div className="aspect-square bg-white/5 rounded-xl mb-4 shadow-inner" />
+    <div className="h-4 bg-white/5 rounded-full w-3/4 mb-2" />
+    <div className="h-3 bg-white/5 rounded-full w-1/2" />
+  </div>
+);

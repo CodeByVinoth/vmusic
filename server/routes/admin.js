@@ -149,18 +149,29 @@ router.post('/download', protectAdmin, async (req, res) => {
 
     console.log(`Starting optimized download for: ${url}`);
     
-    // Get video info
-    const info = await ytdl.getInfo(url);
+    // Advanced request options to bypass bot detection
+    const ytdlOptions = {
+      quality: 'highestaudio',
+      filter: 'audioonly',
+      requestOptions: {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': '*/*',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Sec-Fetch-Mode': 'navigate',
+        }
+      }
+    };
+
+    // Get video info with advanced options
+    const info = await ytdl.getInfo(url, ytdlOptions);
     const videoTitle = info.videoDetails.title.replace(/[^\w\s]/gi, '').substring(0, 50);
     const fileName = `song_${videoTitle.replace(/\s+/g, '_')}_${timestamp}.mp3`;
     const filePath = path.join(tempDir, fileName);
 
     // Download audio only
     await new Promise((resolve, reject) => {
-      const stream = ytdl(url, { 
-        quality: 'highestaudio',
-        filter: 'audioonly'
-      });
+      const stream = ytdl(url, ytdlOptions);
       
       const fileStream = fs.createWriteStream(filePath);
       stream.pipe(fileStream);

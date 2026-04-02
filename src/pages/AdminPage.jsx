@@ -51,12 +51,13 @@ export const AdminPage = () => {
   };
 
   const handleLocalUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
-    if (!file.type.startsWith('audio/')) {
+    const invalidFiles = files.filter(f => !f.type.startsWith('audio/'));
+    if (invalidFiles.length > 0) {
       setStatus('error');
-      setMessage('Please select a valid audio file.');
+      setMessage(`Please select only audio files. (${invalidFiles.length} invalid files)`);
       return;
     }
 
@@ -64,27 +65,38 @@ export const AdminPage = () => {
     setStatus(null);
     setMessage('');
 
-    const formData = new FormData();
-    formData.append('file', file);
+    let successCount = 0;
+    let failCount = 0;
 
-    try {
-      const response = await api.post('/admin/upload-local', formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      setStatus('success');
-      setMessage(response.data.message);
-      refreshSongs();
-    } catch (error) {
-      console.error('Local Upload Error:', error);
-      setStatus('error');
-      setMessage(error.response?.data?.details || 'Failed to upload local file');
-    } finally {
-      setIsUploadingLocal(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        await api.post('/admin/upload-local', formData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Upload error for ${file.name}:`, error);
+        failCount++;
+      }
     }
+
+    if (successCount > 0) {
+      setStatus('success');
+      setMessage(`Successfully uploaded ${successCount} songs.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+      refreshSongs();
+    } else if (failCount > 0) {
+      setStatus('error');
+      setMessage(`Failed to upload ${failCount} songs. Please try again.`);
+    }
+
+    setIsUploadingLocal(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleDeleteSong = async (song) => {
@@ -124,8 +136,8 @@ export const AdminPage = () => {
       </header>
 
       {status && (
-        <div className={`p-4 rounded-lg mb-6 flex items-center gap-3 text-sm ${
-          status === 'success' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+        <div className={`p-4 rounded-lg mb-6 flex items-center gap-3 text-sm animate-fade-in ${
+          status === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
         }`}>
           {status === 'success' ? <CheckCircle size={20} /> : <XCircle size={20} />}
           {message}
@@ -133,15 +145,15 @@ export const AdminPage = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-8">
-        <form onSubmit={handleDownload} className="glass-effect p-4 md:p-6 rounded-xl flex flex-col gap-4">
-          <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
-            <LinkIcon size={18} md:size={20} />
+        <form onSubmit={handleDownload} className="glass-effect p-4 md:p-6 rounded-2xl flex flex-col gap-4 border border-white/5">
+          <h2 className="text-base md:text-lg font-black flex items-center gap-2 tracking-tight">
+            <LinkIcon size={18} className="text-accent-primary" />
             Download from URL
           </h2>
           <input
             type="url"
-            placeholder="YouTube, SoundCloud, etc."
-            className="w-full bg-white/5 text-white py-2 px-4 rounded-lg outline-none focus:ring-1 focus:ring-accent-primary transition-all text-sm"
+            placeholder="YouTube link..."
+            className="w-full bg-white/5 text-white py-3 px-4 rounded-xl outline-none focus:ring-1 focus:ring-accent-primary transition-all text-sm border border-white/5"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             disabled={isDownloading || isUploadingLocal}
@@ -149,27 +161,28 @@ export const AdminPage = () => {
           <button
             type="submit"
             disabled={!url || isDownloading || isUploadingLocal}
-            className="py-2.5 px-4 rounded-lg font-bold bg-accent-primary text-black transition-all hover:bg-accent-secondary disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+            className="py-3 px-4 rounded-xl font-black bg-accent-primary text-black transition-all hover:scale-[1.02] active:scale-[0.98] disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm shadow-lg shadow-accent-primary/20"
           >
             {isDownloading ? (
               <>
-                <Loader2 className="animate-spin" size={16} md:size={18} />
+                <Loader2 className="animate-spin" size={18} />
                 Processing...
               </>
             ) : (
-              'Download'
+              'Add Song'
             )}
           </button>
         </form>
 
-        <div className="glass-effect p-4 md:p-6 rounded-xl flex flex-col gap-4">
-          <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
-            <Upload size={18} md:size={20} />
-            Upload Local File
+        <div className="glass-effect p-4 md:p-6 rounded-2xl flex flex-col gap-4 border border-white/5">
+          <h2 className="text-base md:text-lg font-black flex items-center gap-2 tracking-tight">
+            <Upload size={18} className="text-accent-primary" />
+            Upload Local Files
           </h2>
           <input
             type="file"
             accept="audio/*"
+            multiple
             className="hidden"
             ref={fileInputRef}
             onChange={handleLocalUpload}
@@ -178,49 +191,49 @@ export const AdminPage = () => {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isDownloading || isUploadingLocal}
-            className="py-2.5 px-4 rounded-lg font-bold bg-white text-black transition-all hover:bg-gray-300 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+            className="py-3 px-4 rounded-xl font-black bg-white text-black transition-all hover:scale-[1.02] active:scale-[0.98] disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm shadow-xl"
           >
             {isUploadingLocal ? (
               <>
-                <Loader2 className="animate-spin" size={16} md:size={18} />
+                <Loader2 className="animate-spin" size={18} />
                 Uploading...
               </>
             ) : (
-              'Choose File'
+              'Choose Songs'
             )}
           </button>
-          <p className="text-[10px] md:text-xs text-text-secondary text-center">Max file size: 50MB</p>
+          <p className="text-[10px] font-bold text-text-secondary text-center uppercase tracking-widest">Supports multiple files (Max 50MB each)</p>
         </div>
       </div>
 
-      <section className="glass-effect rounded-xl overflow-hidden">
-        <div className="p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
-            <Music size={18} md:size={20} />
-            Manage Songs
+      <section className="glass-effect rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+        <div className="p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/5">
+          <h2 className="text-base md:text-lg font-black flex items-center gap-2 tracking-tight">
+            <Music size={18} className="text-accent-primary" />
+            Library Manager
           </h2>
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} md:size={18} />
+          <div className="relative w-full sm:max-w-xs group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent-primary transition-colors" size={16} />
             <input
               type="text"
               placeholder="Search library..."
-              className="w-full bg-white/5 text-white py-2 pl-9 pr-4 rounded-lg text-sm outline-none focus:ring-1 focus:ring-accent-primary transition-all"
+              className="w-full bg-[#0a0a0a] text-white py-2.5 pl-10 pr-4 rounded-xl text-sm outline-none border border-white/5 focus:border-accent-primary/50 transition-all"
               value={adminSearchQuery}
               onChange={(e) => setAdminSearchQuery(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto">
+        <div className="w-full overflow-x-auto custom-scrollbar">
           <table className="w-full text-left table-auto">
             <thead>
-              <tr className="text-text-secondary text-xs font-bold uppercase tracking-wider border-b border-white/10">
-                <th className="px-6 py-3">Song</th>
-                <th className="px-4 py-3 hidden sm:table-cell">Format</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+              <tr className="text-text-secondary text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5 bg-white/[0.02]">
+                <th className="px-6 py-4">Song Details</th>
+                <th className="px-4 py-4 hidden sm:table-cell text-center">Format</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-white/5">
               {filteredSongs.length > 0 ? (
                 filteredSongs.map((song) => (
                   <SongAdminRow 
@@ -232,8 +245,11 @@ export const AdminPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="3" className="px-6 py-12 text-center text-text-secondary text-sm">
-                    No songs match your search.
+                  <td colSpan="3" className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center gap-2 opacity-20">
+                      <Music size={48} />
+                      <p className="text-sm font-bold uppercase tracking-widest">No songs found</p>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -247,18 +263,25 @@ export const AdminPage = () => {
 
 const SongAdminRow = ({ song, onDelete, isDeleting }) => {
   return (
-    <tr className="group hover:bg-white/5 transition-colors">
+    <tr className="group hover:bg-white/[0.03] transition-all duration-300">
       <td className="px-6 py-4">
         <div className="flex items-center gap-4">
-          <img src={song.thumbnail} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+          <div className="relative flex-shrink-0">
+            <img src={song.thumbnail} alt="" className="w-12 h-12 rounded-lg object-cover shadow-lg border border-white/5" />
+            {isDeleting && (
+              <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
+                <Loader2 size={16} className="animate-spin text-white" />
+              </div>
+            )}
+          </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-white font-medium text-sm truncate">{song.title}</span>
-            <span className="text-text-secondary text-xs truncate">{song.artist || 'Unknown Artist'}</span>
+            <span className="text-white font-black text-sm truncate tracking-tight">{song.title}</span>
+            <span className="text-text-secondary text-[11px] font-bold truncate opacity-70 uppercase tracking-tighter">{song.artist || 'Unknown Artist'}</span>
           </div>
         </div>
       </td>
-      <td className="px-4 py-4 hidden sm:table-cell">
-        <span className="bg-white/10 text-text-secondary px-2 py-1 rounded text-[10px] font-bold uppercase">
+      <td className="px-4 py-4 hidden sm:table-cell text-center">
+        <span className="bg-white/5 text-text-secondary px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border border-white/5">
           {song.format || 'mp3'}
         </span>
       </td>
@@ -266,10 +289,10 @@ const SongAdminRow = ({ song, onDelete, isDeleting }) => {
         <button 
           onClick={() => onDelete(song)}
           disabled={isDeleting}
-          className="p-2 text-text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors disabled:opacity-50"
+          className="p-2.5 text-text-secondary hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all duration-300 disabled:opacity-50 active:scale-90"
           title="Delete Song"
         >
-          {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+          <Trash2 size={18} />
         </button>
       </td>
     </tr>

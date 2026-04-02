@@ -4,48 +4,74 @@ import { AuthProvider } from './AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { MainView } from './components/MainView';
 import { PlayerBar } from './components/PlayerBar';
-import { Menu, X } from 'lucide-react';
+import { Home, Search, Heart, ShieldCheck, Menu } from 'lucide-react';
 
 function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('home'); // For mobile bottom nav
 
   return (
     <AuthProvider>
       <MusicProvider>
-        <div className="h-screen flex flex-col bg-black text-white relative overflow-hidden">
-          {/* Mobile Header */}
-          <div className="md:hidden flex items-center justify-between p-4 glass-effect z-40 border-b border-white/10">
-            <h1 className="text-xl font-black tracking-tighter">VMUSIC</h1>
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-              {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-
+        <div className="h-screen flex flex-col bg-[#0a0a0a] text-white selection:bg-accent-primary/30">
           <div className="flex flex-1 overflow-hidden relative">
-            {/* Sidebar with mobile state */}
-            <div className={`
-              fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0
-              ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-            `}>
-              <Sidebar onClose={() => setIsSidebarOpen(false)} />
+            {/* Desktop Sidebar - Hidden on mobile */}
+            <div className="hidden md:block w-64 border-r border-white/5">
+              <Sidebar />
             </div>
 
-            {/* Overlay for mobile sidebar */}
-            {isSidebarOpen && (
-              <div 
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
-                onClick={() => setIsSidebarOpen(false)}
-              />
-            )}
-
-            <MainView />
+            <main className="flex-1 relative flex flex-col min-w-0 h-full overflow-hidden">
+              <MainView activeTab={activeTab} />
+            </main>
           </div>
-          <PlayerBar />
-          <div className="absolute inset-0 pointer-events-none bg-black/30 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+
+          {/* Player Bar - Professional Floating/Fixed Style */}
+          <div className="relative z-50">
+            <PlayerBar />
+          </div>
+
+          {/* Mobile Bottom Navigation - Professional App Style */}
+          <nav className="md:hidden h-[72px] bg-[#121212]/95 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-2 pb-safe z-50">
+            <MobileNavItem 
+              icon={Home} 
+              label="Home" 
+              active={activeTab === 'home'} 
+              onClick={() => setActiveTab('home')} 
+            />
+            <MobileNavItem 
+              icon={Search} 
+              label="Search" 
+              active={activeTab === 'search'} 
+              onClick={() => setActiveTab('search')} 
+            />
+            <MobileNavItem 
+              icon={Heart} 
+              label="Library" 
+              active={activeTab === 'liked'} 
+              onClick={() => setActiveTab('liked')} 
+            />
+            <MobileNavItem 
+              icon={ShieldCheck} 
+              label="Admin" 
+              active={activeTab === 'admin'} 
+              onClick={() => setActiveTab('admin')} 
+            />
+          </nav>
         </div>
       </MusicProvider>
     </AuthProvider>
   );
 }
+
+const MobileNavItem = ({ icon: Icon, label, active, onClick }) => (
+  <button 
+    onClick={onClick}
+    className={`flex flex-col items-center justify-center gap-1 w-16 h-full transition-all duration-300 ${
+      active ? 'text-accent-primary scale-110' : 'text-text-secondary hover:text-white'
+    }`}
+  >
+    <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+    <span className="text-[10px] font-bold tracking-tight">{label}</span>
+  </button>
+);
 
 export default App;
