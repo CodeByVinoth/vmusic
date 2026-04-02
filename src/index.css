@@ -75,15 +75,23 @@ body {
 
 /* Custom Slider Styling */
 .slider-container {
-  @apply relative w-full h-1 bg-white/10 rounded-full group cursor-pointer;
+  @apply relative w-full h-1 bg-white/10 rounded-full cursor-pointer;
 }
 
 .slider-progress {
-  @apply absolute left-0 top-0 h-full bg-white group-hover:bg-accent-primary rounded-full transition-colors;
+  @apply absolute left-0 top-0 h-full bg-white rounded-full transition-colors;
+}
+
+.slider-container:hover .slider-progress {
+  @apply bg-accent-primary;
 }
 
 .slider-thumb {
-  @apply absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity;
+  @apply absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 transition-opacity;
+}
+
+.slider-container:hover .slider-thumb {
+  @apply opacity-100;
 }
 
 /* Range input reset for cross-browser consistency */

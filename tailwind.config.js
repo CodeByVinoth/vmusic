@@ -6,6 +6,15 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        'accent-primary': '#1db954',
+        'accent-secondary': '#1ed760',
+        'bg-base': '#000000',
+        'bg-elevated': '#121212',
+        'bg-highlight': '#282828',
+        'text-main': '#ffffff',
+        'text-secondary': '#b3b3b3',
+      },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },

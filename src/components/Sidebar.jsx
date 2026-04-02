@@ -1,19 +1,5 @@
-import { Home, Search, Heart, PlusSquare, ListMusic, ShieldCheck } from 'lucide-react';
+import { Home, Search, Heart, PlusSquare, ListMusic, ShieldCheck, Music } from 'lucide-react';
 import { useMusic } from '../MusicContext';
-
-const NavItem = ({ icon: Icon, label, view, currentView, setView }) => (
-  <button
-    onClick={() => setView(view)}
-    className={`flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${
-      currentView === view
-        ? 'bg-white/10 text-white'
-        : 'text-text-secondary hover:text-white'
-    }`}
-  >
-    <Icon size={24} />
-    {label}
-  </button>
-);
 
 export const Sidebar = ({ onClose }) => {
   const { currentView, setView, playlists, createPlaylist, setSelectedPlaylist, selectedPlaylistId } = useMusic();
