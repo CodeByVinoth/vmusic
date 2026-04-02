@@ -58,7 +58,7 @@ export const MainView = () => {
       />
 
       {/* Sticky Top Bar */}
-      <header className={`sticky top-0 z-40 flex items-center justify-between px-4 md:px-8 py-4 transition-all duration-300 ${isScrolled ? 'bg-[#070707]' : 'bg-transparent'}`}>
+      <header className={`sticky top-0 z-40 flex items-center justify-between px-4 md:px-8 py-4 transition-all duration-300 ${isScrolled ? 'bg-black/70 backdrop-blur-xl border-b border-white/5' : 'bg-transparent border-b border-transparent'}`}>
         <div className="flex items-center gap-4 flex-1">
           <div className="hidden md:flex gap-2">
             <button className="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white/40 cursor-not-allowed">
@@ -70,12 +70,12 @@ export const MainView = () => {
           </div>
           
           {currentView === 'search' && (
-            <div className="relative group w-full max-w-md md:ml-4 ml-12">
+            <div className="relative group w-full max-w-md md:ml-4 pl-12 md:pl-0">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-white" size={20} />
               <input 
                 type="text" 
                 placeholder="What do you want to listen to?" 
-                className="w-full bg-bg-highlight hover:bg-[#3e3e3e] border-none focus:ring-2 focus:ring-white text-white py-3 pl-10 pr-4 rounded-full text-sm outline-none transition-all placeholder:text-text-muted"
+                className="w-full bg-white/10 hover:bg-white/15 border border-white/10 focus:ring-2 focus:ring-white/30 text-white py-3 pl-10 pr-4 rounded-full text-sm outline-none transition-all placeholder:text-text-muted backdrop-blur-md"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -83,14 +83,14 @@ export const MainView = () => {
           )}
 
           {currentView !== 'search' && (
-            <h2 className={`md:hidden font-bold text-lg transition-opacity duration-300 ml-12 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}>
+            <h2 className={`md:hidden font-bold text-lg transition-opacity duration-300 pl-12 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}>
               {currentView.charAt(0).toUpperCase() + currentView.slice(1)}
             </h2>
           )}
         </div>
       </header>
 
-      <div className="relative z-10 flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-32">
+      <div className="relative z-10 flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-[calc(var(--player-mobile-height)+24px+env(safe-area-inset-bottom))] md:pb-[calc(var(--player-desktop-height)+24px+env(safe-area-inset-bottom))]">
         {/* --- HOME VIEW --- */}
         {currentView === 'home' && (
           <div className="flex flex-col gap-8 animate-slide-up">

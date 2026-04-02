@@ -89,7 +89,7 @@ export const PlayerBar = () => {
   const isLiked = currentSong && likedSongs.some(s => s.id === currentSong.id);
 
   return (
-    <footer className="w-full z-[100] select-none">
+    <footer className="fixed bottom-0 left-0 right-0 w-full z-[100] select-none pb-safe">
       <audio 
         ref={audioRef} 
         src={currentSong?.url} 
@@ -99,9 +99,9 @@ export const PlayerBar = () => {
       />
 
       {/* --- MOBILE MINI PLAYER --- */}
-      <div className="md:hidden px-2 mb-2">
+      <div className="md:hidden px-2 pb-2">
         {currentSong && (
-          <div className="bg-[#282828] rounded-md h-[56px] flex items-center justify-between px-3 gap-3 shadow-2xl animate-slide-up relative overflow-hidden">
+          <div className="bg-[#111111]/95 border border-white/10 backdrop-blur-xl rounded-2xl h-[var(--player-mobile-height)] flex items-center justify-between px-3 gap-3 shadow-2xl animate-slide-up relative overflow-hidden">
             {/* Progress line at bottom of mini player */}
             <div className="absolute bottom-0 left-0 h-[2px] bg-white/20 w-full">
               <div 
@@ -121,7 +121,7 @@ export const PlayerBar = () => {
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => toggleLike(currentSong)}
-                className={isLiked ? 'text-accent-primary' : 'text-white'}
+                className={`transition-colors ${isLiked ? 'text-accent-primary' : 'text-white/90 hover:text-white'}`}
               >
                 <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
               </button>
@@ -137,7 +137,7 @@ export const PlayerBar = () => {
       </div>
 
       {/* --- DESKTOP PLAYER BAR --- */}
-      <div className="hidden md:flex h-[90px] bg-black border-t border-white/5 px-4 items-center">
+      <div className="hidden md:flex h-[var(--player-desktop-height)] bg-black/90 backdrop-blur-xl border-t border-white/10 px-4 items-center">
         <div className="w-full flex items-center justify-between gap-4 max-w-[100vw]">
           
           {/* --- LEFT: SONG INFO --- */}

@@ -12,6 +12,14 @@
   --bg-highlight: #282828;
   --text-main: #ffffff;
   --text-muted: #b3b3b3;
+  --player-mobile-height: 64px;
+  --player-desktop-height: 90px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
 }
 
 body {
@@ -23,7 +31,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg-base);
   color: var(--text-main);
-  overflow: hidden;
+  overflow: hidden; /* app handles scrolling via internal containers */
   user-select: none;
 }
 
@@ -65,6 +73,23 @@ body {
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-effect {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.10),
+      rgba(255, 255, 255, 0.04)
+    );
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .animate-shake {
+    animation: shake 380ms ease-in-out both;
   }
 }
 
@@ -127,4 +152,13 @@ input[type="range"]:hover::-webkit-slider-runnable-track {
 
 .animate-slide-up {
   animation: slide-up 0.4s ease-out forwards;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+  100% { transform: translateX(0); }
 }
