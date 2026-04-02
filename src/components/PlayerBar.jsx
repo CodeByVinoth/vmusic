@@ -24,12 +24,14 @@ export const PlayerBar = () => {
     }
   }, [isPlaying, currentSong]);
 
-  useEffect(() => {
+  const handleVolumeChange = (e) => {
+    const newVolume = Number(e.target.value);
+    setVolume(newVolume);
     if (audioRef.current) {
-      audioRef.current.volume = volume;
-      localStorage.setItem('volume', volume);
+      audioRef.current.volume = newVolume;
     }
-  }, [volume]);
+    localStorage.setItem('volume', newVolume);
+  };
 
   const onTimeUpdate = () => {
     if (audioRef.current) {
@@ -59,6 +61,15 @@ export const PlayerBar = () => {
     setIsPlaying(true);
   };
 
+  const handleSongEnd = () => {
+    if (isRepeat) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+    } else {
+      handleSkipForward();
+    }
+  };
+
   const handleSkipBack = () => {
     if (!currentSong || !songs.length) return;
     const currentIndex = songs.findIndex(s => s.id === currentSong.id);
@@ -82,7 +93,7 @@ export const PlayerBar = () => {
         ref={audioRef} 
         src={currentSong?.url} 
         onTimeUpdate={onTimeUpdate}
-        onEnded={isRepeat ? () => audioRef.current?.play() : handleSkipForward}
+        onEnded={handleSongEnd}
       />
 
       {/* Song Info */}
@@ -188,7 +199,7 @@ export const PlayerBar = () => {
               max="1" 
               step="0.01" 
               value={volume} 
-              onChange={(e) => setVolume(Number(e.target.value))}
+              onChange={handleVolumeChange}
               className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
             />
             <div 
