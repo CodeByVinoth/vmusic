@@ -3,10 +3,10 @@ import axios from 'axios';
 
 const router = express.Router();
 
-const GITHUB_OWNER = process.env.GITHUB_OWNER;
-const GITHUB_REPO = process.env.GITHUB_REPO;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+const GITHUB_OWNER = (process.env.GITHUB_OWNER || '').trim();
+const GITHUB_REPO = (process.env.GITHUB_REPO || '').trim();
+const GITHUB_TOKEN = (process.env.GITHUB_TOKEN || '').trim();
+const GITHUB_BRANCH = (process.env.GITHUB_BRANCH || 'main').trim();
 const API_BASE_URL = process.env.API_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5000');
 const MUSIC_PATH = 'songs';
 
@@ -42,7 +42,7 @@ router.get('/stream', async (req, res) => {
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
       {
         headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'VMUSIC-App'
         }
@@ -66,7 +66,7 @@ router.get('/stream', async (req, res) => {
         method: 'get',
         url: `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
         headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3.raw',
           'User-Agent': 'VMUSIC-App',
           'Range': `bytes=${start}-${end}`
@@ -90,7 +90,7 @@ router.get('/stream', async (req, res) => {
         method: 'get',
         url: `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
         headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3.raw',
           'User-Agent': 'VMUSIC-App'
         },
@@ -143,7 +143,7 @@ router.get('/songs', async (req, res) => {
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${MUSIC_PATH}`,
       {
         headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'VMUSIC-App'
         },

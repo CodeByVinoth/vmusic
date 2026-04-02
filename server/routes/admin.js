@@ -14,10 +14,10 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-const GITHUB_OWNER = process.env.GITHUB_OWNER;
-const GITHUB_REPO = process.env.GITHUB_REPO;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+const GITHUB_OWNER = (process.env.GITHUB_OWNER || '').trim();
+const GITHUB_REPO = (process.env.GITHUB_REPO || '').trim();
+const GITHUB_TOKEN = (process.env.GITHUB_TOKEN || '').trim();
+const GITHUB_BRANCH = (process.env.GITHUB_BRANCH || 'main').trim();
 const API_BASE_URL = process.env.API_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5000');
 
 // --- AUTHENTICATION ---
@@ -96,7 +96,7 @@ router.post('/upload-local', protectAdmin, upload.single('file'), async (req, re
       },
       {
         headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'VMUSIC-App'
         },
@@ -201,7 +201,7 @@ router.post('/download', protectAdmin, async (req, res) => {
       },
       {
         headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'VMUSIC-App'
         },
@@ -254,7 +254,7 @@ router.delete('/songs', protectAdmin, async (req, res) => {
           branch: GITHUB_BRANCH
         },
         headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Authorization': `Bearer ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'VMUSIC-App'
         }
