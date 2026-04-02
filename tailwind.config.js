@@ -7,13 +7,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        'accent-primary': '#1db954',
-        'accent-secondary': '#1ed760',
+        'accent-primary': '#ff0000',
+        'accent-secondary': '#cc0000',
         'bg-base': '#000000',
-        'bg-elevated': '#121212',
-        'bg-highlight': '#282828',
+        'bg-elevated': '#0a0a0a',
+        'bg-highlight': '#1a1a1a',
         'text-main': '#ffffff',
-        'text-secondary': '#b3b3b3',
+        'text-secondary': '#9ca3af',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

@@ -5,13 +5,13 @@
 @tailwind utilities;
 
 :root {
-  --accent-primary: #1db954;
-  --accent-secondary: #1ed760;
+  --accent-primary: #ff0000;
+  --accent-secondary: #cc0000;
   --bg-base: #000000;
-  --bg-elevated: #121212;
-  --bg-highlight: #282828;
+  --bg-elevated: #0a0a0a;
+  --bg-highlight: #1a1a1a;
   --text-main: #ffffff;
-  --text-muted: #b3b3b3;
+  --text-muted: #9ca3af;
 }
 
 body {
@@ -28,7 +28,7 @@ body {
 
 @layer utilities {
   .glass-effect {
-    @apply bg-[#121212]/60 backdrop-blur-2xl border border-white/5 shadow-2xl;
+    @apply bg-bg-elevated/60 backdrop-blur-2xl border border-white/5 shadow-2xl;
   }
   
   .animate-fade-in {
@@ -79,11 +79,11 @@ body {
 }
 
 .slider-progress {
-  @apply absolute left-0 top-0 h-full bg-white rounded-full transition-colors;
+  @apply absolute left-0 top-0 h-full bg-accent-primary rounded-full transition-colors;
 }
 
 .slider-container:hover .slider-progress {
-  @apply bg-accent-primary;
+  @apply bg-accent-secondary;
 }
 
 .slider-thumb {

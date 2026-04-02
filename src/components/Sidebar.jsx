@@ -19,7 +19,7 @@ export const Sidebar = ({ onClose }) => {
     <div className="w-full h-full bg-[#0a0a0a] p-6 flex flex-col gap-8">
       {/* Brand Logo */}
       <div className="flex items-center gap-3 px-2">
-        <div className="w-10 h-10 bg-accent-primary rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(29,185,84,0.3)]">
+        <div className="w-10 h-10 bg-accent-primary rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,0,0,0.3)]">
           <Music size={24} className="text-black" fill="black" />
         </div>
         <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">VMUSIC</h1>
@@ -93,7 +93,7 @@ const NavItem = ({ icon: Icon, label, view, currentView, setView }) => {
       onClick={() => setView(view)}
       className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 group ${
         active 
-          ? 'bg-accent-primary text-black shadow-[0_10px_20px_rgba(29,185,84,0.2)]' 
+          ? 'bg-accent-primary text-black shadow-[0_10px_20px_rgba(255,0,0,0.2)]' 
           : 'text-text-secondary hover:text-white hover:bg-white/5'
       }`}
     >

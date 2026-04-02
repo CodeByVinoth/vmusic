@@ -32,7 +32,7 @@ export const SongCard = ({ song }) => {
       <div className="relative mb-3 md:mb-4 overflow-hidden rounded-xl aspect-square shadow-2xl">
         {isCurrentSong && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-            <div className={`relative w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-accent-primary flex items-center justify-center bg-black/80 shadow-[0_0_20px_rgba(29,185,84,0.4)] ${isCurrentlyPlaying ? 'animate-[spin_6s_linear_infinite]' : ''}`}>
+            <div className={`relative w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-accent-primary flex items-center justify-center bg-black/80 shadow-[0_0_20px_rgba(255,0,0,0.4)] ${isCurrentlyPlaying ? 'animate-[spin_6s_linear_infinite]' : ''}`}>
               {isCurrentlyPlaying ? (
                 <div className="playing-bars">
                   <div className="playing-bar" />
