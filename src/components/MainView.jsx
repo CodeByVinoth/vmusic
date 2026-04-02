@@ -4,7 +4,7 @@ import { useAuth } from '../AuthContext';
 import { SongCard } from './SongCard';
 import { AdminPage } from '../pages/AdminPage';
 import { LoginPage } from '../pages/LoginPage';
-import { Search as SearchIcon, Heart, AlertCircle, RefreshCw, Clock, Hash } from 'lucide-react';
+import { Search as SearchIcon, Heart, AlertCircle, RefreshCw, Clock, Hash, Music } from 'lucide-react';
 
 export const MainView = ({ activeTab }) => {
   const { currentView, setView, songs, likedSongs, playlists, selectedPlaylistId, isLoading, error, refreshSongs } = useMusic();
