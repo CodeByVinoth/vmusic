@@ -11,11 +11,10 @@ import {
   Maximize2,
   ListMusic,
   Heart,
-  ChevronUp,
-  ChevronDown,
   Music,
 } from 'lucide-react';
 import { useMusic } from '../MusicContext';
+import { FullScreenPlayer } from './FullScreenPlayer';
 
 export const PlayerBar = () => {
   const { currentSong, isPlaying, setIsPlaying, setCurrentSong, songs, likedSongs, toggleLike } = useMusic();
@@ -29,7 +28,7 @@ export const PlayerBar = () => {
   const [isShuffle, setIsShuffle] = useState(false);
   const [isRepeat, setIsRepeat] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
 
   // Save volume preference
   useEffect(() => {
@@ -133,9 +132,11 @@ export const PlayerBar = () => {
         ════════════════════════════════════ */}
       <div className="md:hidden px-2 pb-2 pt-1">
         <div
+          onClick={() => setIsFullScreenOpen(true)}
           className="
             relative bg-[#181818]/97 backdrop-blur-xl border border-white/10
-            rounded-2xl overflow-hidden shadow-2xl
+            rounded-2xl overflow-hidden shadow-2xl cursor-pointer
+            active:scale-[0.98] transition-transform duration-150
           "
           style={{ height: 'var(--player-height-mobile)' }}
         >
@@ -177,7 +178,7 @@ export const PlayerBar = () => {
             <div className="flex items-center gap-2">
               {/* Like button */}
               <button
-                onClick={() => toggleLike(currentSong)}
+                onClick={(e) => { e.stopPropagation(); toggleLike(currentSong); }}
                 className={`
                   w-9 h-9 flex items-center justify-center rounded-full transition-all
                   ${isLiked
@@ -192,7 +193,7 @@ export const PlayerBar = () => {
 
               {/* Play/Pause button */}
               <button
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying); }}
                 className="w-10 h-10 flex items-center justify-center text-white"
                 aria-label={isPlaying ? 'Pause' : 'Play'}
               >
@@ -206,6 +207,14 @@ export const PlayerBar = () => {
           </div>
         </div>
       </div>
+
+      {/* ════════════════════════════════════
+            FULL SCREEN MOBILE PLAYER
+        ════════════════════════════════════ */}
+      <FullScreenPlayer
+        isOpen={isFullScreenOpen}
+        onClose={() => setIsFullScreenOpen(false)}
+      />
 
       {/* ════════════════════════════════════
             DESKTOP FULL PLAYER
