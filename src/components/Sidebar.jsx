@@ -1,8 +1,13 @@
 import { Home, Search, Heart, PlusSquare, ListMusic, ShieldCheck, Music } from 'lucide-react';
 import { useMusic } from '../MusicContext';
 
-export const Sidebar = () => {
+export const Sidebar = ({ onClose }) => {
   const { currentView, setView, playlists, createPlaylist, setSelectedPlaylist, selectedPlaylistId } = useMusic();
+
+  const handleNavClick = (view) => {
+    setView(view);
+    if (onClose) onClose();
+  };
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
@@ -24,7 +29,7 @@ export const Sidebar = () => {
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setView(item.id)}
+              onClick={() => handleNavClick(item.id)}
               className={`spotify-nav-item ${currentView === item.id ? 'active' : ''}`}
             >
               <item.icon size={24} strokeWidth={currentView === item.id ? 2.5 : 2} />
@@ -59,6 +64,7 @@ export const Sidebar = () => {
               onClick={() => {
                 setView('playlist');
                 setSelectedPlaylist(playlist.id);
+                if (onClose) onClose();
               }}
               className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-md ${
                 currentView === 'playlist' && selectedPlaylistId === playlist.id ? 'bg-white/10' : ''

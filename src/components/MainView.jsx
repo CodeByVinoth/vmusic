@@ -16,7 +16,6 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
-  User,
   MoreHorizontal
 } from 'lucide-react';
 
@@ -71,7 +70,7 @@ export const MainView = () => {
           </div>
           
           {currentView === 'search' && (
-            <div className="relative group w-full max-w-md md:ml-4">
+            <div className="relative group w-full max-w-md md:ml-4 ml-12">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-white" size={20} />
               <input 
                 type="text" 
@@ -84,16 +83,10 @@ export const MainView = () => {
           )}
 
           {currentView !== 'search' && (
-            <h2 className={`md:hidden font-bold text-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}>
+            <h2 className={`md:hidden font-bold text-lg transition-opacity duration-300 ml-12 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}>
               {currentView.charAt(0).toUpperCase() + currentView.slice(1)}
             </h2>
           )}
-        </div>
-
-        <div className="flex items-center gap-4 ml-4">
-          <button className="w-8 h-8 rounded-full bg-bg-highlight flex items-center justify-center text-text-muted hover:text-white hover:scale-105 transition-all">
-            <User size={20} />
-          </button>
         </div>
       </header>
 
@@ -182,35 +175,48 @@ export const MainView = () => {
                   <button className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-accent-primary flex items-center justify-center hover:scale-105 transition-all text-black shadow-xl">
                     <Play fill="black" size={24} md:size={28} className="ml-1" />
                   </button>
-                  <Heart size={28} md:size={32} className="text-accent-primary" fill="currentColor" />
-                  <MoreHorizontal size={24} className="text-text-muted hover:text-white cursor-pointer" />
+                  <Heart 
+                    size={28} 
+                    md:size={32} 
+                    className="text-accent-primary cursor-pointer hover:scale-110 transition-transform" 
+                    fill="currentColor" 
+                  />
+                  <MoreHorizontal size={24} className="text-text-muted hover:text-white cursor-pointer transition-colors" />
                 </div>
                 <div className="md:hidden">
-                  <Filter size={20} className="text-text-muted" />
+                  <Filter size={20} className="text-text-muted cursor-pointer hover:text-white transition-colors" />
                 </div>
               </div>
 
               <div className="mt-4">
-                <div className="hidden md:grid grid-cols-[16px_1fr_1fr_40px] gap-4 px-4 py-2 border-b border-white/10 text-text-muted text-sm font-medium mb-4">
+                <div className="hidden md:grid grid-cols-[16px_1fr_1fr_40px] gap-4 px-4 py-2 border-b border-white/10 text-text-muted text-sm font-medium mb-4 uppercase tracking-wider">
                   <span>#</span>
                   <span>Title</span>
                   <span>Album</span>
-                  <Clock size={16} />
+                  <div className="flex justify-center"><Clock size={16} /></div>
                 </div>
                 {(currentView === 'liked' ? likedSongs : selectedPlaylist.songs).map((song, index) => (
-                  <div key={`${song.id}-${index}`} className="flex md:grid md:grid-cols-[16px_1fr_1fr_40px] gap-4 px-2 md:px-4 py-2 hover:bg-white/10 rounded group cursor-pointer items-center">
-                    <span className="hidden md:block text-text-muted group-hover:text-white">{index + 1}</span>
+                  <div 
+                    key={`${song.id}-${index}`} 
+                    className="flex md:grid md:grid-cols-[16px_1fr_1fr_40px] gap-4 px-2 md:px-4 py-3 hover:bg-white/10 rounded-md group cursor-pointer items-center transition-all duration-200 active:bg-white/5"
+                  >
+                    <span className="hidden md:block text-text-muted group-hover:text-white font-mono text-xs">{index + 1}</span>
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <img src={song.thumbnail} alt="" className="w-10 h-10 md:w-12 md:h-12 object-cover rounded" />
+                      <div className="relative flex-shrink-0">
+                        <img src={song.thumbnail} alt="" className="w-10 h-10 md:w-12 md:h-12 object-cover rounded shadow-md" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded">
+                          <Play size={16} fill="white" className="text-white" />
+                        </div>
+                      </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="font-bold truncate text-sm md:text-base text-white">{song.title}</span>
-                        <span className="text-xs md:text-sm text-text-muted group-hover:text-white truncate">{song.artist || 'Unknown Artist'}</span>
+                        <span className="font-bold truncate text-sm md:text-base text-white group-hover:text-accent-primary transition-colors">{song.title}</span>
+                        <span className="text-xs md:text-sm text-text-muted group-hover:text-white truncate font-medium">{song.artist || 'Unknown Artist'}</span>
                       </div>
                     </div>
                     <span className="hidden md:block text-sm text-text-muted group-hover:text-white truncate">Single</span>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 justify-end">
                       <Heart size={16} className="md:hidden text-accent-primary" fill="currentColor" />
-                      <span className="text-xs md:text-sm text-text-muted group-hover:text-white">3:45</span>
+                      <span className="text-xs md:text-sm text-text-muted group-hover:text-white font-mono">3:45</span>
                     </div>
                   </div>
                 ))}
