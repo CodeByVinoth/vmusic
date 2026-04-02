@@ -1,13 +1,18 @@
-const express = require('express');
+import express from 'express';
+import axios from 'axios';
+import ytDlp from 'yt-dlp-exec';
+import path from 'path';
+import fs from 'fs';
+import ffmpegPath from 'ffmpeg-static';
+import multer from 'multer';
+import jwt from 'jsonwebtoken';
+import { fileURLToPath } from 'url';
+import { clearCache } from './songs.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const router = express.Router();
-const axios = require('axios');
-const ytDlp = require('yt-dlp-exec');
-const path = require('path');
-const fs = require('fs');
-const ffmpegPath = require('ffmpeg-static');
-const multer = require('multer');
-const jwt = require('jsonwebtoken');
-const { clearCache } = require('./songs');
 
 const GITHUB_OWNER = process.env.GITHUB_OWNER;
 const GITHUB_REPO = process.env.GITHUB_REPO;
@@ -277,4 +282,4 @@ router.delete('/songs', protectAdmin, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

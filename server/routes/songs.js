@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import axios from 'axios';
+
 const router = express.Router();
-const axios = require('axios');
 
 const GITHUB_OWNER = process.env.GITHUB_OWNER;
 const GITHUB_REPO = process.env.GITHUB_REPO;
@@ -220,10 +221,10 @@ router.get('/songs', async (req, res) => {
   }
 });
 
-const clearCache = () => {
+export const clearCache = () => {
   console.log('--- Clearing songs cache ---');
   songsCache.data = null;
   songsCache.timestamp = 0;
 };
 
-module.exports = { router, clearCache };
+export default router;

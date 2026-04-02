@@ -1,9 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import 'dotenv/config';
 
-const songsRoute = require('./routes/songs');
-const adminRoute = require('./routes/admin');
+import songsRoute from './routes/songs.js';
+import adminRoute from './routes/admin.js';
+
+import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,7 +38,7 @@ const authMiddleware = (req, res, next) => {
 };
 
 app.use('/api', authMiddleware);
-app.use('/api', songsRoute.router);
+app.use('/api', songsRoute);
 app.use('/api/admin', adminRoute);
 
 // Global Error Handler
@@ -45,10 +47,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 
-if (require.main === module) {
+// Start server if run directly (local development)
+const isMain = process.argv[1] && (process.argv[1] === fileURLToPath(import.meta.url));
+if (isMain) {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 }
 
-module.exports = app;
+export default app;
