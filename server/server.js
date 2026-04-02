@@ -25,6 +25,14 @@ const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
   const apiKey = req.headers['x-api-key'] || req.query.key;
 
+  // Priority 0: Stream requests with key in query
+  if (req.path.includes('/stream') && req.query.key) {
+    const expectedKey = process.env.VITE_API_KEY;
+    if (req.query.key === expectedKey) {
+      return next();
+    }
+  }
+
   // Priority 1: JWT Token
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
@@ -32,6 +40,10 @@ const authMiddleware = (req, res, next) => {
     
     jwt.verify(token, secret, (err, user) => {
       if (err) {
+        // If it's a stream request, we might want to check the API key even if the JWT fails
+        if (req.path.includes('/stream')) {
+          return checkApiKey();
+        }
         return res.status(403).json({ error: 'Invalid or expired token' });
       }
       req.user = user;
@@ -40,21 +52,25 @@ const authMiddleware = (req, res, next) => {
     return; // Stop further execution
   }
 
-  // Priority 2: API Key
-  const expectedKey = process.env.VITE_API_KEY;
-  if (!expectedKey) {
-    console.error('CRITICAL: API_KEY is not set in environment variables!');
-    return res.status(500).json({ 
-      error: 'Server Configuration Error', 
-      message: 'API_KEY is missing on the server.' 
-    });
+  function checkApiKey() {
+    // Priority 2: API Key
+    const expectedKey = process.env.VITE_API_KEY;
+    if (!expectedKey) {
+      console.error('CRITICAL: API_KEY is not set in environment variables!');
+      return res.status(500).json({ 
+        error: 'Server Configuration Error', 
+        message: 'API_KEY is missing on the server.' 
+      });
+    }
+    
+    if (!apiKey || apiKey !== expectedKey) {
+      return res.status(403).json({ error: 'Unauthorized', message: 'Invalid or missing API key' });
+    }
+    
+    next();
   }
-  
-  if (!apiKey || apiKey !== expectedKey) {
-    return res.status(403).json({ error: 'Unauthorized', message: 'Invalid or missing API key' });
-  }
-  
-  next();
+
+  checkApiKey();
 };
 
 app.use('/api', authMiddleware);

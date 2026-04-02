@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useState, useRef, useMemo } from 'react';
 import api from '../axiosInstance';
 import { Upload, Link as LinkIcon, CheckCircle, XCircle, Loader2, LogOut, Search, Trash2, Music } from 'lucide-react';
@@ -32,11 +33,7 @@ export const AdminPage = () => {
     setMessage('');
 
     try {
-      const response = await api.post('/admin/download', { url }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await api.post('/admin/download', { url });
       setStatus('success');
       setMessage(response.data.message);
       setUrl('');
@@ -74,11 +71,6 @@ export const AdminPage = () => {
         const configResponse = await api.post('/admin/create-upload-url', {
           filename: file.name,
           filetype: file.type
-        }, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-api-key': api.defaults.headers.common['x-api-key']
-          }
         });
 
         const { uploadUrl, githubToken, githubBranch } = configResponse.data;
@@ -152,10 +144,7 @@ export const AdminPage = () => {
 
     try {
       await api.delete('/admin/songs', {
-        params: { path: song.path, sha: song.id },
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        params: { path: song.path, sha: song.id }
       });
       setStatus('success');
       setMessage(`Successfully deleted "${song.title}"`);

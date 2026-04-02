@@ -167,7 +167,7 @@ export const MainView = ({ activeTab }) => {
         {/* --- ADMIN VIEW --- */}
         {currentView === 'admin' && (
           <div className="animate-fade-in">
-            <AdminPage />
+            {user ? <AdminPage /> : <LoginPage />}
           </div>
         )}
       </div>
