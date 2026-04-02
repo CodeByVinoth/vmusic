@@ -23,11 +23,11 @@ function AppContent() {
         </main>
       </div>
 
-      {/* Player Bar */}
+      {/* Player Bar (Handles both Mobile Mini Player and Desktop Bar) */}
       <PlayerBar />
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden h-[64px] bg-black/95 backdrop-blur-md border-t border-white/5 flex items-center justify-around px-2 pb-safe z-50">
+      {/* Mobile Bottom Navigation - Professional Spotify Style */}
+      <nav className="md:hidden h-[64px] bg-black/95 backdrop-blur-lg border-t border-white/5 flex items-center justify-around px-2 pb-safe z-50">
         <MobileNavItem 
           icon={Home} 
           label="Home" 
@@ -70,12 +70,12 @@ function App() {
 const MobileNavItem = ({ icon: Icon, label, active, onClick }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center justify-center gap-1 w-16 h-full transition-all duration-300 ${
-      active ? 'text-accent-primary scale-110' : 'text-text-secondary hover:text-white'
+    className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-200 ${
+      active ? 'text-white' : 'text-text-secondary hover:text-white'
     }`}
   >
-    <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-    <span className="text-[10px] font-bold tracking-tight">{label}</span>
+    <Icon size={24} strokeWidth={active ? 2.5 : 2} className={active ? 'scale-110' : ''} />
+    <span className={`text-[10px] font-medium tracking-tight ${active ? 'font-bold' : ''}`}>{label}</span>
   </button>
 );
 
