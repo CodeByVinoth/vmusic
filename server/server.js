@@ -19,7 +19,7 @@ const authMiddleware = (req, res, next) => {
   }
 
   const apiKey = req.headers['x-api-key'] || req.query.key;
-  const expectedKey = process.env.API_KEY || 'song_app_secret_123';
+  const expectedKey = process.env.API_KEY;
   
   if (!apiKey || apiKey !== expectedKey) {
     return res.status(403).json({ error: 'Unauthorized', message: 'Invalid or missing API key' });

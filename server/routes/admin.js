@@ -121,7 +121,7 @@ router.post('/upload-local', protectAdmin, upload.single('file'), async (req, re
       song: {
         id: uploadResponse.data.content.sha,
         title: originalName.replace(/\.[^/.]+$/, "").replace(/_/g, ' '),
-        url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY || 'song_app_secret_123'}`
+        url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY}`
       }
     });
   } catch (error) {
@@ -228,7 +228,7 @@ router.post('/download', protectAdmin, async (req, res) => {
       song: {
         id: uploadResponse.data.content.sha,
         title: cleanTitle,
-        url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY || 'song_app_secret_123'}`
+        url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY}`
       }
     });
 

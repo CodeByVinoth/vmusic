@@ -179,7 +179,7 @@ router.get('/songs', async (req, res) => {
         title = title.replace(/_/g, ' ');
 
         // ✅ stream URL (no double songs)
-        const streamUrl = `${API_BASE_URL}/api/stream?path=${encodeURIComponent(file.path)}&key=${process.env.API_KEY || 'song_app_secret_123'}`;
+        const streamUrl = `${API_BASE_URL}/api/stream?path=${encodeURIComponent(file.path)}&key=${process.env.API_KEY}`;
 
         return {
           id: file.sha,
