@@ -1,26 +1,24 @@
-import React from 'react';
 import { Play, Heart, Plus, Music } from 'lucide-react';
 import { useMusic } from '../MusicContext';
+import { useState, useRef, useEffect } from 'react';
 
 export const SongCard = ({ song }) => {
-  const { setCurrentSong, setIsPlaying, toggleLike, likedSongs, addToPlaylist, playlists, currentSong, isPlaying } = useMusic();
-  const isLiked = likedSongs.some(s => s.id === song.id);
-  const [showPlaylistMenu, setShowPlaylistMenu] = React.useState(false);
-  const playlistMenuRef = React.useRef(null);
+  const { currentSong, isPlaying, setCurrentSong, setIsPlaying, toggleLike, likedSongs, playlists, addToPlaylist } = useMusic();
+  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
+  const playlistMenuRef = useRef(null);
 
   const isCurrentSong = currentSong?.id === song.id;
   const isCurrentlyPlaying = isCurrentSong && isPlaying;
+  const isLiked = likedSongs.some(s => s.id === song.id);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (playlistMenuRef.current && !playlistMenuRef.current.contains(event.target)) {
         setShowPlaylistMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   return (
@@ -35,11 +33,14 @@ export const SongCard = ({ song }) => {
         {isCurrentSong && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
             <div className={`relative w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-accent-primary flex items-center justify-center bg-black/80 shadow-[0_0_20px_rgba(29,185,84,0.4)] ${isCurrentlyPlaying ? 'animate-[spin_6s_linear_infinite]' : ''}`}>
-              <Music className="text-accent-primary" size={16} md:size={20} />
-              {isCurrentlyPlaying && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-accent-primary rounded-full flex items-center justify-center border-2 border-black">
-                  <div className="w-1.5 h-1.5 bg-black rounded-full animate-pulse" />
+              {isCurrentlyPlaying ? (
+                <div className="playing-bars">
+                  <div className="playing-bar" />
+                  <div className="playing-bar" />
+                  <div className="playing-bar" />
                 </div>
+              ) : (
+                <Music className="text-accent-primary" size={16} md:size={20} />
               )}
             </div>
           </div>
@@ -63,7 +64,7 @@ export const SongCard = ({ song }) => {
         <h3 className={`font-black truncate text-xs md:text-sm tracking-tight transition-colors ${isCurrentSong ? 'text-accent-primary' : 'text-white'}`}>
           {song.title}
         </h3>
-        <p className="text-[10px] md:text-xs text-text-secondary truncate font-bold opacity-70 group-hover:opacity-100 transition-opacity">
+        <p className="text-[10px] md:text-xs text-text-muted truncate font-bold opacity-70 group-hover:opacity-100 transition-opacity">
           {song.artist || 'Unknown Artist'}
         </p>
       </div>
@@ -75,7 +76,7 @@ export const SongCard = ({ song }) => {
             e.stopPropagation();
             toggleLike(song);
           }}
-          className={`p-2 -ml-2 rounded-full hover:bg-white/10 transition-all active:scale-125 ${isLiked ? 'text-accent-primary' : 'text-text-secondary hover:text-white'}`}
+          className={`p-2 -ml-2 rounded-full hover:bg-white/10 transition-all active:scale-125 ${isLiked ? 'text-accent-primary' : 'text-text-muted hover:text-white'}`}
         >
           <Heart size={16} md:size={18} fill={isLiked ? 'currentColor' : 'none'} strokeWidth={isLiked ? 0 : 2.5} />
         </button>
@@ -86,7 +87,7 @@ export const SongCard = ({ song }) => {
               e.stopPropagation();
               setShowPlaylistMenu(!showPlaylistMenu);
             }}
-            className="p-2 -mr-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-full transition-all active:rotate-90"
+            className="p-2 -mr-2 text-text-muted hover:text-white hover:bg-white/10 rounded-full transition-all active:rotate-90"
           >
             <Plus size={16} md:size={18} strokeWidth={2.5} />
           </button>
@@ -96,7 +97,7 @@ export const SongCard = ({ song }) => {
               ref={playlistMenuRef} 
               className="absolute bottom-full right-0 mb-2 w-48 bg-[#181818] border border-white/10 rounded-xl shadow-2xl z-50 py-2 animate-slide-down"
             >
-              <div className="px-4 py-2 text-[10px] font-black text-text-secondary uppercase tracking-[0.1em] border-b border-white/5 mb-1">Add to Playlist</div>
+              <div className="px-4 py-2 text-[10px] font-black text-text-muted uppercase tracking-[0.1em] border-b border-white/5 mb-1">Add to Playlist</div>
               <div className="max-h-48 overflow-y-auto custom-scrollbar">
                 {playlists.length > 0 ? (
                   playlists.map(p => (
@@ -113,7 +114,7 @@ export const SongCard = ({ song }) => {
                     </button>
                   ))
                 ) : (
-                  <div className="px-4 py-3 text-xs text-text-secondary italic">No playlists found</div>
+                  <div className="px-4 py-3 text-xs text-text-muted italic">No playlists found</div>
                 )}
               </div>
             </div>
