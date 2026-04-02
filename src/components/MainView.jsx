@@ -91,7 +91,6 @@ export const MainView = () => {
         </div>
 
         <div className="flex items-center gap-4 ml-4">
-          <button className="hidden sm:block text-sm font-bold text-text-muted hover:text-white hover:scale-105 transition-all">Support</button>
           <button className="w-8 h-8 rounded-full bg-bg-highlight flex items-center justify-center text-text-muted hover:text-white hover:scale-105 transition-all">
             <User size={20} />
           </button>

@@ -89,7 +89,7 @@ export const PlayerBar = () => {
   const isLiked = currentSong && likedSongs.some(s => s.id === currentSong.id);
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-[100] select-none">
+    <footer className="w-full z-[100] select-none">
       <audio 
         ref={audioRef} 
         src={currentSong?.url} 

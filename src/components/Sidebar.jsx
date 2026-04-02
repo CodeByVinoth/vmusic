@@ -80,6 +80,3 @@ export const Sidebar = () => {
     </div>
   );
 };
-
-// Remove NavItem as it's no longer used
-const NavItem = null;
