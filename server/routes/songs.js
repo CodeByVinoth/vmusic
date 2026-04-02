@@ -170,14 +170,15 @@ router.get('/songs', async (req, res) => {
         // 1. Remove extension
         let title = file.name.replace(/\.[^/.]+$/, "");
         
-        // 2. Remove common prefixes (song_, local_, or numeric timestamp prefix)
-        title = title.replace(/^(song_|local_|\d{10,}_)/, "");
+        // 2. Remove common prefixes (song_, local_)
+        title = title.replace(/^(song_|local_)/, "");
         
-        // 3. Remove numeric timestamp suffix (e.g. _1774937539851)
-        title = title.replace(/_\d{10,}$/, "");
+        // 3. Remove numeric timestamps (10+ digits) from anywhere in the title
+        // Matches timestamps at the beginning, end, or surrounded by underscores/spaces
+        title = title.replace(/(^|[_ ])\d{10,}([_ ]|$)/g, ' ');
         
-        // 4. Final cleanup: underscores to spaces
-        title = title.replace(/_/g, ' ');
+        // 4. Final cleanup: underscores to spaces, multiple spaces to single space, trim
+        title = title.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
 
         // ✅ stream URL (no double songs)
         const streamUrl = `/api/stream?path=${encodeURIComponent(file.path)}&key=${process.env.VITE_API_KEY}`;

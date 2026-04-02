@@ -24,8 +24,17 @@ const getRepeatedThumbnail = (songId) => {
 
 const transformSong = (song) => {
   if (!song) return null;
+  
+  // Safety net: Clean up titles that might contain timestamps or messy underscores
+  const cleanTitle = song.title
+    .replace(/(^|[_ ])\d{10,}([_ ]|$)/g, ' ') // Remove 10+ digit numbers (timestamps)
+    .replace(/_/g, ' ')                       // Underscores to spaces
+    .replace(/\s+/g, ' ')                     // Multiple spaces to single space
+    .trim();
+
   return {
     ...song,
+    title: cleanTitle,
     thumbnail: song.thumbnail || getRepeatedThumbnail(song.id)
   };
 };

@@ -198,7 +198,7 @@ router.post('/download', async (req, res) => {
       message: 'Song downloaded and uploaded to GitHub successfully',
       song: {
         id: uploadResponse.data.content.sha,
-        title: videoTitle.replace(/_/g, ' '),
+        title: videoTitle.replace(/(^|[_ ])\d{10,}([_ ]|$)/g, ' ').replace(/_/g, ' ').replace(/\s+/g, ' ').trim(),
         url: `/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.VITE_API_KEY}`
       }
     });
