@@ -1,86 +1,168 @@
-import { Home, Search, Heart, PlusSquare, ListMusic, ShieldCheck, Music } from 'lucide-react';
+import React from 'react';
+import { Home, Search, Heart, PlusSquare, ListMusic, ShieldCheck, Music, X } from 'lucide-react';
 import { useMusic } from '../MusicContext';
 
 export const Sidebar = ({ onClose }) => {
-  const { currentView, setView, playlists, createPlaylist, setSelectedPlaylist, selectedPlaylistId } = useMusic();
+  const {
+    currentView,
+    setView,
+    playlists,
+    createPlaylist,
+    setSelectedPlaylist,
+    selectedPlaylistId,
+  } = useMusic();
 
   const handleNavClick = (view) => {
     setView(view);
     if (onClose) onClose();
   };
 
+  const handleCreatePlaylist = () => {
+    const name = prompt('Enter playlist name:');
+    if (name && name.trim()) {
+      createPlaylist(name.trim());
+    }
+  };
+
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'search', icon: Search, label: 'Search' },
     { id: 'liked', icon: Heart, label: 'Liked Songs' },
-    { id: 'admin', icon: ShieldCheck, label: 'Admin Dashboard' },
+    { id: 'admin', icon: ShieldCheck, label: 'Admin' },
   ];
 
   return (
-    <div className="w-full h-full bg-black flex flex-col gap-2 p-2">
-      {/* Top Nav Box */}
-      <div className="bg-bg-elevated rounded-lg p-4 flex flex-col gap-4">
-        <div className="flex items-center gap-2 px-2 mb-2">
-          <Music size={28} className="text-accent-primary" fill="currentColor" />
-          <span className="font-black text-xl tracking-tight">VMUSIC</span>
+    <div className="w-full h-full bg-black flex flex-col overflow-hidden">
+
+      {/* ── TOP SECTION: Logo + Nav ── */}
+      <div className="flex-shrink-0 bg-[#121212] rounded-none md:rounded-lg mx-0 md:mx-2 mt-0 md:mt-2 overflow-hidden">
+
+        {/* Logo Row */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-accent-primary rounded-full flex items-center justify-center shadow-glow flex-shrink-0">
+              <Music size={18} className="text-black" fill="currentColor" />
+            </div>
+            <span className="font-black text-xl tracking-tight text-white select-none">
+              VMUSIC
+            </span>
+          </div>
+          {/* Close button - mobile only */}
+          <button
+            onClick={onClose}
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-all"
+            aria-label="Close sidebar"
+          >
+            <X size={18} />
+          </button>
         </div>
-        
-        <nav className="flex flex-col gap-1">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              className={`spotify-nav-item ${currentView === item.id ? 'active' : ''}`}
-            >
-              <item.icon size={24} strokeWidth={currentView === item.id ? 2.5 : 2} />
-              <span>{item.label}</span>
-            </button>
-          ))}
+
+        {/* Navigation */}
+        <nav className="px-3 pb-4 flex flex-col gap-0.5">
+          {navItems.map((item) => {
+            const isActive = currentView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className={`
+                  flex items-center gap-3.5 w-full px-3 py-2.5 rounded-lg
+                  font-semibold text-sm transition-all duration-150
+                  ${isActive
+                    ? 'bg-white/10 text-white'
+                    : 'text-[#b3b3b3] hover:text-white hover:bg-white/5'
+                  }
+                `}
+              >
+                <item.icon
+                  size={22}
+                  strokeWidth={isActive ? 2.5 : 2}
+                  className={isActive ? 'text-white' : ''}
+                />
+                <span>{item.label}</span>
+                {isActive && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent-primary flex-shrink-0" />
+                )}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
-      {/* Library Box */}
-      <div className="flex-1 bg-bg-elevated rounded-lg p-2 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3 text-text-muted hover:text-white transition-colors cursor-pointer">
-            <ListMusic size={24} />
-            <span className="font-bold text-sm">Your Library</span>
+      {/* ── LIBRARY SECTION ── */}
+      <div className="flex-1 bg-[#121212] rounded-none md:rounded-lg mx-0 md:mx-2 mt-2 mb-0 md:mb-2 flex flex-col overflow-hidden min-h-0">
+
+        {/* Library Header */}
+        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <ListMusic size={22} className="text-[#b3b3b3]" />
+            <span className="font-bold text-sm text-[#b3b3b3]">Your Library</span>
           </div>
-          <button 
-            onClick={() => {
-              const name = prompt('Playlist name:');
-              if (name) createPlaylist(name);
-            }} 
-            className="spotify-btn-icon"
+          <button
+            onClick={handleCreatePlaylist}
+            title="Create playlist"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-[#b3b3b3] hover:text-white hover:bg-white/10 transition-all duration-150"
           >
             <PlusSquare size={20} />
           </button>
         </div>
-        
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {playlists.map((playlist) => (
-            <button
-              key={playlist.id}
-              onClick={() => {
-                setView('playlist');
-                setSelectedPlaylist(playlist.id);
-                if (onClose) onClose();
-              }}
-              className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-md ${
-                currentView === 'playlist' && selectedPlaylistId === playlist.id ? 'bg-white/10' : ''
-              }`}
-            >
-              <div className="w-12 h-12 bg-bg-highlight rounded flex items-center justify-center text-text-muted">
-                <Music size={20} />
-              </div>
-              <div className="flex flex-col items-start min-w-0">
-                <span className={`text-sm font-bold truncate w-full ${currentView === 'playlist' && selectedPlaylistId === playlist.id ? 'text-accent-primary' : 'text-white'}`}>
-                  {playlist.name}
-                </span>
-                <span className="text-xs text-text-muted font-medium">Playlist • {playlist.songs?.length || 0} songs</span>
-              </div>
-            </button>
-          ))}
+
+        {/* Playlist List */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-2">
+          {playlists.length === 0 ? (
+            /* Empty state */
+            <div className="mx-3 my-2 p-4 rounded-lg bg-white/5 border border-white/5">
+              <p className="text-sm font-bold text-white mb-1">Create your first playlist</p>
+              <p className="text-xs text-[#b3b3b3] mb-3 leading-relaxed">
+                It's easy, we'll help you.
+              </p>
+              <button
+                onClick={handleCreatePlaylist}
+                className="px-4 py-2 bg-white text-black text-xs font-bold rounded-full hover:scale-105 transition-transform"
+              >
+                Create playlist
+              </button>
+            </div>
+          ) : (
+            playlists.map((playlist) => {
+              const isActive = currentView === 'playlist' && selectedPlaylistId === playlist.id;
+              return (
+                <button
+                  key={playlist.id}
+                  onClick={() => {
+                    setView('playlist');
+                    setSelectedPlaylist(playlist.id);
+                    if (onClose) onClose();
+                  }}
+                  className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                    transition-all duration-150 group
+                    ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}
+                  `}
+                >
+                  {/* Playlist thumbnail */}
+                  <div className="w-11 h-11 rounded-md bg-[#282828] flex items-center justify-center flex-shrink-0 overflow-hidden shadow-md">
+                    <Music size={18} className="text-[#b3b3b3]" />
+                  </div>
+
+                  {/* Playlist info */}
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span
+                      className={`
+                        text-sm font-semibold truncate w-full text-left
+                        ${isActive ? 'text-accent-primary' : 'text-white group-hover:text-white'}
+                      `}
+                    >
+                      {playlist.name}
+                    </span>
+                    <span className="text-xs text-[#b3b3b3] font-medium">
+                      Playlist · {playlist.songs?.length || 0} songs
+                    </span>
+                  </div>
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

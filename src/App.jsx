@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MusicProvider, useMusic } from './MusicContext';
 import { AuthProvider } from './AuthContext';
 import { Sidebar } from './components/Sidebar';
@@ -10,43 +10,78 @@ function AppContent() {
   const { currentView, setView } = useMusic();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+  const closeSidebar = () => setIsSidebarOpen(false);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    closeSidebar();
+  }, [currentView]);
+
+  // Prevent body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isSidebarOpen]);
 
   return (
-    <div className="h-screen flex flex-col bg-black text-white selection:bg-accent-primary/30 font-sans overflow-hidden">
-      <div className="flex flex-1 overflow-hidden relative p-0 md:p-2 gap-0 md:gap-2">
-        {/* Hamburger Menu - Mobile Only */}
-        <button 
+    <div
+      className="flex flex-col bg-black text-white font-sans"
+      style={{ height: '100dvh', overflow: 'hidden' }}
+    >
+      {/* ── Main Layout: Sidebar + Content ── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* ── MOBILE: Hamburger Button ── */}
+        <button
           onClick={toggleSidebar}
-          className="md:hidden fixed top-4 left-4 z-[60] p-2 bg-black/50 backdrop-blur-lg rounded-full border border-white/10 text-white shadow-xl active:scale-90 transition-transform"
+          aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
+          className="md:hidden fixed top-4 left-4 z-[70] w-10 h-10 flex items-center justify-center bg-black/80 backdrop-blur-xl rounded-full border border-white/10 text-white shadow-xl transition-all duration-200 active:scale-90"
         >
-          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
 
-        {/* Sidebar - Desktop (Fixed) & Mobile (Overlay) */}
-        <div className={`
-          fixed inset-y-0 left-0 z-50 w-[280px] transform transition-transform duration-300 ease-in-out bg-black
-          md:relative md:translate-x-0 md:flex-shrink-0 md:bg-transparent
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}>
-          <Sidebar onClose={() => setIsSidebarOpen(false)} />
-        </div>
+        {/* ── MOBILE: Backdrop Overlay ── */}
+        <div
+          onClick={closeSidebar}
+          className={`
+            md:hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm
+            transition-opacity duration-300
+            ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
+          `}
+          aria-hidden="true"
+        />
 
-        {/* Backdrop for Mobile Sidebar */}
-        {isSidebarOpen && (
-          <div 
-            onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
-          />
-        )}
+        {/* ── SIDEBAR ── */}
+        {/* Desktop: always visible, fixed width */}
+        {/* Mobile: slide-in drawer from left */}
+        <aside
+          className={`
+            fixed inset-y-0 left-0 z-[60] w-[280px]
+            transform transition-transform duration-300 ease-in-out
+            md:relative md:translate-x-0 md:flex-shrink-0 md:z-auto
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          `}
+        >
+          <Sidebar onClose={closeSidebar} />
+        </aside>
 
-        {/* Main Content Area */}
-        <main className="flex-1 relative flex flex-col min-w-0 h-full bg-bg-elevated md:rounded-lg overflow-hidden">
+        {/* ── MAIN CONTENT ── */}
+        <main
+          className="flex-1 min-w-0 flex flex-col overflow-hidden bg-bg-elevated"
+          style={{ borderRadius: '0' }}
+        >
           <MainView />
         </main>
       </div>
 
-      {/* Player Bar */}
+      {/* ── PLAYER BAR (always at bottom) ── */}
       <PlayerBar />
     </div>
   );
