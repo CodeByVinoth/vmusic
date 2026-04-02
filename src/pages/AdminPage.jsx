@@ -1,11 +1,8 @@
 import React, { useState, useRef, useMemo } from 'react';
-import axios from 'axios';
+import api from '../axiosInstance';
 import { Upload, Link as LinkIcon, CheckCircle, XCircle, Loader2, LogOut, Search, Trash2, Music } from 'lucide-react';
 import { useMusic } from '../MusicContext';
 import { useAuth } from '../AuthContext';
-
-const API_URL = '/api/admin';
-const API_KEY = import.meta.env.VITE_API_KEY || 'song_app_secret_123';
 
 export const AdminPage = () => {
   const { songs, refreshSongs } = useMusic();
@@ -35,9 +32,8 @@ export const AdminPage = () => {
     setMessage('');
 
     try {
-      const response = await axios.post(`${API_URL}/download`, { url }, {
+      const response = await api.post('/admin/download', { url }, {
         headers: {
-          'x-api-key': API_KEY,
           'Authorization': `Bearer ${token}`
         }
       });
@@ -72,9 +68,8 @@ export const AdminPage = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post(`${API_URL}/upload-local`, formData, {
+      const response = await api.post('/admin/upload-local', formData, {
         headers: {
-          'x-api-key': API_KEY,
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
@@ -100,10 +95,9 @@ export const AdminPage = () => {
     setMessage('');
 
     try {
-      await axios.delete(`${API_URL}/songs`, {
-        params: { path: song.path, sha: song.id }, // Use song.id as sha
+      await api.delete('/admin/songs', {
+        params: { path: song.path, sha: song.id },
         headers: {
-          'x-api-key': API_KEY,
           'Authorization': `Bearer ${token}`
         }
       });

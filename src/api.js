@@ -1,15 +1,9 @@
-import axios from 'axios';
-
-const API_URL = '/api';
-const API_KEY = import.meta.env.VITE_API_KEY || 'song_app_secret_123';
+import api from './axiosInstance';
 
 export const fetchSongs = async () => {
   try {
-    const response = await axios.get(`${API_URL}/songs`, {
-      timeout: 15000,
-      headers: {
-        'x-api-key': API_KEY
-      }
+    const response = await api.get('/songs', {
+      timeout: 15000
     });
     
     if (response.data && Array.isArray(response.data)) {

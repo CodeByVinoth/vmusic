@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from './axiosInstance';
 
 const AuthContext = createContext(undefined);
 
@@ -19,15 +19,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (username, password) => {
     setError(null);
-    const apiBaseUrl = '/api';
     try {
-      const response = await axios.post(`${apiBaseUrl}/admin/login`, {
+      const response = await api.post('/admin/login', {
         username,
         password
-      }, {
-        headers: {
-          'x-api-key': import.meta.env.VITE_API_KEY || 'song_app_secret_123'
-        }
       });
       const { token } = response.data;
       setToken(token);
