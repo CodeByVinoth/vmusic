@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import ytDlp from 'yt-dlp-exec';
+import ytdl from '@distube/ytdl-core';
 import path from 'path';
 import fs from 'fs';
 import ffmpegPath from 'ffmpeg-static';
@@ -67,12 +67,12 @@ const protectAdmin = (req, res, next) => {
 // Configure Multer for local file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const tempDir = path.join(__dirname, '../temp');
+    const tempDir = '/tmp'; // Use Vercel's writable directory
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
     cb(null, tempDir);
   },
   filename: (req, file, cb) => {
-    cb(null, `local_${Date.now()}_${file.originalname}`);
+    cb(null, `local_${Date.now()}_${file.originalname.replace(/\s+/g, '_')}`);
   }
 });
 
@@ -98,8 +98,7 @@ router.post('/upload-local', protectAdmin, upload.single('file'), async (req, re
     const fileBuffer = await fs.promises.readFile(filePath);
     const contentBase64 = fileBuffer.toString('base64');
     const timestamp = Date.now();
-    const cleanName = originalName.replace(/[^a-zA-Z0-9.]/g, '_');
-    const githubPath = `songs/${timestamp}_${cleanName}`;
+    const githubPath = `songs/local_${timestamp}_${originalName.replace(/\s+/g, '_')}`;
 
     const uploadResponse = await axios.put(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${githubPath}`,
@@ -154,11 +153,10 @@ router.post('/download', protectAdmin, async (req, res) => {
     return res.status(500).json({ error: 'GitHub configuration missing on server' });
   }
 
+  const timestamp = Date.now();
+  const tempDir = '/tmp';
+  
   try {
-    const timestamp = Date.now();
-    const tempDir = '/tmp'; // Use Vercel's writable directory
-    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-
     if (url.includes('spotify.com')) {
       return res.status(400).json({ 
         error: 'Spotify links are not supported', 
@@ -168,50 +166,42 @@ router.post('/download', protectAdmin, async (req, res) => {
 
     console.log(`Starting optimized download for: ${url}`);
     
-    // Use the video title directly in the filename using yt-dlp template
-    const outputTemplate = path.join(tempDir, `song_%(title).50s_${timestamp}.%(ext)s`);
+    // Get video info
+    const info = await ytdl.getInfo(url);
+    const videoTitle = info.videoDetails.title.replace(/[^\w\s]/gi, '').substring(0, 50);
+    const fileName = `song_${videoTitle.replace(/\s+/g, '_')}_${timestamp}.mp3`;
+    const filePath = path.join(tempDir, fileName);
 
-    await ytDlp(url, {
-      extractAudio: true,
-      audioFormat: 'mp3',
-      output: outputTemplate,
-      ffmpegLocation: ffmpegPath,
-      noCheckCertificates: true,
-      noWarnings: true,
-      preferFreeFormats: true,
-      noPlaylist: true,
-      format: 'bestaudio/best',
-      addHeader: [
-        'referer:youtube.com',
-        'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      ]
+    // Download audio only
+    await new Promise((resolve, reject) => {
+      const stream = ytdl(url, { 
+        quality: 'highestaudio',
+        filter: 'audioonly'
+      });
+      
+      const fileStream = fs.createWriteStream(filePath);
+      stream.pipe(fileStream);
+      
+      fileStream.on('finish', resolve);
+      fileStream.on('error', reject);
+      stream.on('error', reject);
     });
 
-    // Find the downloaded file (it will start with 'song_' and end with our timestamp)
-    const files = fs.readdirSync(tempDir);
-    const foundFile = files.find(f => f.includes(`_${timestamp}.mp3`));
-    
-    if (!foundFile) {
-      throw new Error('Downloaded file not found - conversion might have failed');
+    if (!fs.existsSync(filePath)) {
+      throw new Error('Downloaded file not found');
     }
 
-    const filePath = path.join(tempDir, foundFile);
-    const cleanTitle = foundFile
-      .replace(/^song_/, '')
-      .replace(`_${timestamp}.mp3`, '')
-      .replace(/_/g, ' ');
-
-    console.log(`Uploading to GitHub: ${cleanTitle}`);
+    console.log(`Uploading to GitHub: ${videoTitle}`);
 
     // 3. UPLOAD: Use fs.promises.readFile and longer timeout
     const fileBuffer = await fs.promises.readFile(filePath);
     const contentBase64 = fileBuffer.toString('base64');
-    const githubPath = `songs/${foundFile}`;
+    const githubPath = `songs/${fileName}`;
 
     const uploadResponse = await axios.put(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${githubPath}`,
       {
-        message: `Upload song: ${cleanTitle}`,
+        message: `Upload song: ${videoTitle}`,
         content: contentBase64,
         branch: GITHUB_BRANCH
       },
@@ -238,16 +228,16 @@ router.post('/download', protectAdmin, async (req, res) => {
       message: 'Song downloaded and uploaded to GitHub successfully',
       song: {
         id: uploadResponse.data.content.sha,
-        title: cleanTitle,
+        title: videoTitle.replace(/_/g, ' '),
         url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY}`
       }
     });
 
   } catch (error) {
-    console.error('GitHub Upload Error:', error.message);
+    console.error('YouTube Process Error:', error.message);
     res.status(500).json({ 
-      error: 'Failed to process download/upload', 
-      details: error.response?.data?.message || error.message 
+      error: 'Failed to process YouTube download/upload', 
+      details: error.message 
     });
   }
 });
