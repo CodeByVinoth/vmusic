@@ -41,7 +41,7 @@ const authMiddleware = (req, res, next) => {
   }
 
   // Priority 2: API Key
-  const expectedKey = process.env.API_KEY;
+  const expectedKey = process.env.VITE_API_KEY;
   if (!expectedKey) {
     console.error('CRITICAL: API_KEY is not set in environment variables!');
     return res.status(500).json({ 
