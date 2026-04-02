@@ -124,9 +124,16 @@ router.get('/songs', async (req, res) => {
 
     console.log('--- Fetching songs from GitHub ---');
 
-    if (!GITHUB_OWNER || !GITHUB_REPO) {
-      console.warn('GitHub configuration missing, returning fallback data');
-      return res.json(fallbackSongs);
+    if (!GITHUB_OWNER || !GITHUB_REPO || !GITHUB_TOKEN) {
+      console.error('GitHub configuration missing in environment variables:', {
+        GITHUB_OWNER: !!GITHUB_OWNER,
+        GITHUB_REPO: !!GITHUB_REPO,
+        GITHUB_TOKEN: !!GITHUB_TOKEN
+      });
+      return res.status(500).json({ 
+        error: 'Backend Configuration Error', 
+        message: 'Missing GitHub environment variables on the server.' 
+      });
     }
 
     console.log(`--- Fetching from: ${MUSIC_PATH} in ${GITHUB_OWNER}/${GITHUB_REPO} ---`);
@@ -135,7 +142,7 @@ router.get('/songs', async (req, res) => {
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${MUSIC_PATH}`,
       {
         headers: {
-          'Authorization': GITHUB_TOKEN ? `token ${GITHUB_TOKEN}` : '',
+          'Authorization': `token ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'VMUSIC-App'
         },
@@ -205,7 +212,11 @@ router.get('/songs', async (req, res) => {
         headers: { ...error.config?.headers, Authorization: 'REDACTED' }
       }
     });
-    res.json(fallbackSongs);
+    res.status(500).json({ 
+      error: 'GitHub API Error', 
+      message: error.message,
+      details: error.response?.data
+    });
   }
 });
 
