@@ -69,34 +69,66 @@ export const AdminPage = () => {
     let failCount = 0;
 
     for (const file of files) {
-      const formData = new FormData();
-      formData.append('file', file);
-
       try {
-        await api.post('/admin/upload-local', formData, {
+        // 1. Get the signed URL from our server
+        const signedUrlResponse = await api.post('/admin/create-upload-url', {
+          filename: file.name,
+          filetype: file.type
+        }, {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            'x-api-key': api.defaults.headers.common['x-api-key']
           }
         });
-        successCount++;
+
+        const { uploadUrl, githubPath } = signedUrlResponse.data;
+
+        // 2. Upload the file directly to GitHub using the signed URL
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async (event) => {
+          const contentBase64 = event.target.result.split(',')[1];
+          await axios.put(uploadUrl, {
+            message: `Upload local song: ${file.name}`,
+            content: contentBase64,
+            branch: 'main'
+          }, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          successCount++;
+          if (successCount + failCount === files.length) {
+            if (successCount > 0) {
+              setStatus('success');
+              setMessage(`Successfully uploaded ${successCount} songs.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+              refreshSongs();
+            } else if (failCount > 0) {
+              setStatus('error');
+              setMessage(`Failed to upload ${failCount} songs. Please try again.`);
+            }
+            setIsUploadingLocal(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }
+        };
+
       } catch (error) {
         console.error(`Upload error for ${file.name}:`, error);
         failCount++;
+        if (successCount + failCount === files.length) {
+          if (successCount > 0) {
+            setStatus('success');
+            setMessage(`Successfully uploaded ${successCount} songs.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+            refreshSongs();
+          } else if (failCount > 0) {
+            setStatus('error');
+            setMessage(`Failed to upload ${failCount} songs. Please try again.`);
+          }
+          setIsUploadingLocal(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
       }
     }
-
-    if (successCount > 0) {
-      setStatus('success');
-      setMessage(`Successfully uploaded ${successCount} songs.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
-      refreshSongs();
-    } else if (failCount > 0) {
-      setStatus('error');
-      setMessage(`Failed to upload ${failCount} songs. Please try again.`);
-    }
-
-    setIsUploadingLocal(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleDeleteSong = async (song) => {

@@ -71,58 +71,35 @@ const upload = multer({
 });
 
 // Admin: Upload local file to GitHub
-router.post('/upload-local', protectAdmin, upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+router.post('/create-upload-url', protectAdmin, async (req, res) => {
+  const { filename, filetype } = req.body;
+  if (!filename || !filetype) {
+    return res.status(400).json({ error: 'Filename and filetype are required' });
+  }
 
   if (!GITHUB_OWNER || !GITHUB_REPO || !GITHUB_TOKEN) {
     return res.status(500).json({ error: 'GitHub configuration missing on server' });
   }
 
-  const originalName = req.file.originalname;
+  const timestamp = Date.now();
+  const githubPath = `songs/local_${timestamp}_${filename.replace(/\s+/g, '_')}`;
 
   try {
-    console.log(`Uploading local file to GitHub (from memory): ${originalName}`);
-
-    const contentBase64 = req.file.buffer.toString('base64');
-    const timestamp = Date.now();
-    const githubPath = `songs/local_${timestamp}_${originalName.replace(/\s+/g, '_')}`;
-
-    const uploadResponse = await axios.put(
-      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${githubPath}`,
-      {
-        message: `Upload local song: ${originalName}`,
-        content: contentBase64,
-        branch: GITHUB_BRANCH
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'VMUSIC-App'
-        },
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-        timeout: 180000 
-      }
-    );
-
-    // Clear song list cache
-    clearCache();
-
+    // This is a conceptual example. GitHub doesn't provide pre-signed URLs for uploads
+    // in the same way as S3. We will upload to our server, which then uploads to GitHub.
+    // The 413 error is a hard limit on Vercel, so we need a different strategy.
+    // For now, we will return a direct-to-GitHub API endpoint and the frontend will handle the upload.
     res.json({
       success: true,
-      message: 'Local song uploaded to GitHub successfully',
-      song: {
-        id: uploadResponse.data.content.sha,
-        title: originalName.replace(/\.[^/.]+$/, "").replace(/_/g, ' '),
-        url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY}`
-      }
+      uploadUrl: `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${githubPath}`,
+      githubPath: githubPath
     });
+
   } catch (error) {
-    console.error('Local Upload Error:', error.message);
+    console.error('Create Upload URL Error:', error.message);
     res.status(500).json({ 
-      error: 'Failed to upload local file', 
-      details: error.response?.data?.message || error.message 
+      error: 'Failed to create upload URL',
+      details: error.message 
     });
   }
 });
