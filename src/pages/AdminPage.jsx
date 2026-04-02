@@ -244,6 +244,9 @@ export const AdminPage = () => {
           <h2 className="text-base md:text-lg font-black flex items-center gap-2 tracking-tight">
             <Music size={18} className="text-accent-primary" />
             Library Manager
+            <span className="ml-2 bg-accent-primary/10 text-accent-primary px-2.5 py-1 rounded-lg text-[10px] font-black border border-accent-primary/20 tracking-widest uppercase">
+              {songs.length} {songs.length === 1 ? 'Song' : 'Songs'}
+            </span>
           </h2>
           <div className="relative w-full sm:max-w-xs group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent-primary transition-colors" size={16} />
