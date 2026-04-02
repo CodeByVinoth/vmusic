@@ -68,10 +68,10 @@ export const AdminPage = () => {
     let successCount = 0;
     let failCount = 0;
 
-    for (const file of files) {
+    const uploadFile = async (file) => {
       try {
-        // 1. Get the signed URL from our server
-        const signedUrlResponse = await api.post('/admin/create-upload-url', {
+        // 1. Get the signed URL and config from our server
+        const configResponse = await api.post('/admin/create-upload-url', {
           filename: file.name,
           filetype: file.type
         }, {
@@ -81,53 +81,65 @@ export const AdminPage = () => {
           }
         });
 
-        const { uploadUrl, githubPath } = signedUrlResponse.data;
+        const { uploadUrl, githubToken, githubBranch } = configResponse.data;
 
-        // 2. Upload the file directly to GitHub using the signed URL
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async (event) => {
-          const contentBase64 = event.target.result.split(',')[1];
-          await axios.put(uploadUrl, {
-            message: `Upload local song: ${file.name}`,
-            content: contentBase64,
-            branch: 'main'
-          }, {
-            headers: {
-              'Authorization': `Bearer ${token}`
+        // 2. Upload the file directly to GitHub using the provided token
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = async (event) => {
+            try {
+              const contentBase64 = event.target.result.split(',')[1];
+              await axios.put(uploadUrl, {
+                message: `Upload local song: ${file.name}`,
+                content: contentBase64,
+                branch: githubBranch
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${githubToken}`
+                }
+              });
+              successCount++;
+              resolve();
+            } catch (error) {
+              console.error(`GitHub direct upload error for ${file.name}:`, error);
+              failCount++;
+              reject(error);
             }
-          });
-          successCount++;
-          if (successCount + failCount === files.length) {
-            if (successCount > 0) {
-              setStatus('success');
-              setMessage(`Successfully uploaded ${successCount} songs.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
-              refreshSongs();
-            } else if (failCount > 0) {
-              setStatus('error');
-              setMessage(`Failed to upload ${failCount} songs. Please try again.`);
-            }
-            setIsUploadingLocal(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-          }
-        };
-
+          };
+          reader.onerror = () => {
+            failCount++;
+            reject(new Error('FileReader error'));
+          };
+        });
       } catch (error) {
-        console.error(`Upload error for ${file.name}:`, error);
+        console.error(`Backend config error for ${file.name}:`, error);
         failCount++;
-        if (successCount + failCount === files.length) {
-          if (successCount > 0) {
-            setStatus('success');
-            setMessage(`Successfully uploaded ${successCount} songs.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
-            refreshSongs();
-          } else if (failCount > 0) {
-            setStatus('error');
-            setMessage(`Failed to upload ${failCount} songs. Please try again.`);
-          }
-          setIsUploadingLocal(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
+        throw error;
+      }
+    };
+
+    try {
+      // Run uploads sequentially to avoid hitting GitHub rate limits or browser limits
+      for (const file of files) {
+        try {
+          await uploadFile(file);
+        } catch (e) {
+          // Individual failure is caught inside uploadFile, continue loop
         }
       }
+
+      if (successCount > 0) {
+        setStatus('success');
+        setMessage(`Successfully uploaded ${successCount} songs.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+        refreshSongs();
+      } else if (failCount > 0) {
+        setStatus('error');
+        setMessage(`Failed to upload ${failCount} songs. Please try again.`);
+      }
+    } finally {
+      setIsUploadingLocal(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 

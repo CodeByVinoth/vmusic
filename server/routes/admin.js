@@ -85,14 +85,13 @@ router.post('/create-upload-url', protectAdmin, async (req, res) => {
   const githubPath = `songs/local_${timestamp}_${filename.replace(/\s+/g, '_')}`;
 
   try {
-    // This is a conceptual example. GitHub doesn't provide pre-signed URLs for uploads
-    // in the same way as S3. We will upload to our server, which then uploads to GitHub.
-    // The 413 error is a hard limit on Vercel, so we need a different strategy.
-    // For now, we will return a direct-to-GitHub API endpoint and the frontend will handle the upload.
+    // Return GitHub config so the frontend can upload directly to GitHub, bypassing Vercel's body size limit.
     res.json({
       success: true,
       uploadUrl: `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${githubPath}`,
-      githubPath: githubPath
+      githubPath: githubPath,
+      githubToken: GITHUB_TOKEN,
+      githubBranch: GITHUB_BRANCH
     });
 
   } catch (error) {
