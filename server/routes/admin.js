@@ -33,7 +33,11 @@ router.post('/login', async (req, res) => {
   }
 
   if (username === adminUsername && password === adminPassword) {
-    const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: '8h' });
+    const secret = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
+    if (secret === 'fallback_secret_for_dev_only' && process.env.NODE_ENV === 'production') {
+      return res.status(500).json({ error: 'Server Error', message: 'JWT_SECRET is not configured' });
+    }
+    const token = jwt.sign({ username }, secret, { expiresIn: '8h' });
     res.json({ token });
   } else {
     res.status(401).json({ error: 'Invalid credentials' });
@@ -45,7 +49,9 @@ const protectAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    const secret = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
+    
+    jwt.verify(token, secret, (err, user) => {
       if (err) {
         return res.status(403).json({ error: 'Invalid or expired token' });
       }
@@ -150,7 +156,7 @@ router.post('/download', protectAdmin, async (req, res) => {
 
   try {
     const timestamp = Date.now();
-    const tempDir = path.join(__dirname, '../temp');
+    const tempDir = '/tmp'; // Use Vercel's writable directory
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
     if (url.includes('spotify.com')) {
