@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
+import jwt from 'jsonwebtoken';
 
 import songsRoute from './routes/songs.js';
 import adminRoute from './routes/admin.js';
