@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import ytdl from '@distube/ytdl-core';
+import youtubeDl from 'yt-dlp-exec';
 import path from 'path';
 import fs from 'fs';
 import ffmpegPath from 'ffmpeg-static';
@@ -123,38 +123,30 @@ router.post('/download', async (req, res) => {
       });
     }
 
-    console.log(`Starting optimized download for: ${url}`);
+    console.log(`Starting optimized download with yt-dlp for: ${url}`);
     
-    // Advanced request options to bypass bot detection
-    const ytdlOptions = {
-      quality: 'highestaudio',
-      filter: 'audioonly',
-      requestOptions: {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': '*/*',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Sec-Fetch-Mode': 'navigate',
-        }
-      }
-    };
+    // 1. Get metadata with yt-dlp
+    const info = await youtubeDl(url, {
+      dumpSingleJson: true,
+      noWarnings: true,
+      noCallHome: true,
+      noCheckCertificate: true,
+      preferFreeFormats: true,
+      youtubeSkipDashManifest: true,
+    });
 
-    // Get video info with advanced options
-    const info = await ytdl.getInfo(url, ytdlOptions);
-    const videoTitle = info.videoDetails.title.replace(/[^\w\s]/gi, '').substring(0, 50);
+    const videoTitle = (info.title || 'Unknown Title').replace(/[^\w\s]/gi, '').substring(0, 50);
     const fileName = `song_${videoTitle.replace(/\s+/g, '_')}_${timestamp}.mp3`;
     const filePath = path.join(tempDir, fileName);
 
-    // Download audio only
-    await new Promise((resolve, reject) => {
-      const stream = ytdl(url, ytdlOptions);
-      
-      const fileStream = fs.createWriteStream(filePath);
-      stream.pipe(fileStream);
-      
-      fileStream.on('finish', resolve);
-      fileStream.on('error', reject);
-      stream.on('error', reject);
+    // 2. Download audio with yt-dlp
+    await youtubeDl(url, {
+      extractAudio: true,
+      audioFormat: 'mp3',
+      output: filePath,
+      noCheckCertificate: true,
+      noWarnings: true,
+      ffmpegLocation: ffmpegPath,
     });
 
     if (!fs.existsSync(filePath)) {
@@ -207,7 +199,7 @@ router.post('/download', async (req, res) => {
     console.error('YouTube Process Error:', error.message);
     res.status(500).json({ 
       error: 'Failed to process YouTube download/upload', 
-      details: error.message 
+      details: error.message || 'YouTube might be blocking the request or the link is invalid. Try again later.'
     });
   }
 });
