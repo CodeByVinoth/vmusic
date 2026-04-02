@@ -76,11 +76,14 @@ export const MusicProvider = ({ children }) => {
     localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
   }, [likedSongs]);
 
-  const refreshSongs = useCallback(async () => {
-    setIsLoading(true);
+  const refreshSongs = useCallback(async (force = false) => {
+    // Only show loading spinner on initial load, not on forced background refreshes
+    if (!songs.length) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
-      const data = await fetchSongs();
+      const data = await fetchSongs(force);
       if (data && Array.isArray(data)) {
         const mapped = data.map(s => transformSong(s));
         setSongs(mapped);

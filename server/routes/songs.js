@@ -116,14 +116,17 @@ router.get('/stream', async (req, res) => {
 });
 
 router.get('/songs', async (req, res) => {
+  const { force } = req.query; // Check for a force refresh parameter
+
   try {
     const now = Date.now();
-    if (songsCache.data && (now - songsCache.timestamp < songsCache.ttl)) {
-      console.log('--- Returning songs from cache ---');
+    // If not forcing a refresh, use the cache
+    if (force !== 'true' && songsCache.data && (now - songsCache.timestamp < (60 * 1 * 1000))) { 
+      console.log('--- Returning songs from a short-lived cache (1 min) ---');
       return res.json(songsCache.data);
     }
 
-    console.log('--- Fetching songs from GitHub ---');
+    console.log(`--- Fetching fresh songs from GitHub (Forced: ${!!force}) ---`);
 
     if (!GITHUB_OWNER || !GITHUB_REPO || !GITHUB_TOKEN) {
       console.error('GitHub configuration missing in environment variables:', {

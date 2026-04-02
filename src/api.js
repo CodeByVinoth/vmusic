@@ -1,8 +1,11 @@
 import api from './axiosInstance';
 
-export const fetchSongs = async () => {
+export const fetchSongs = async (force = false) => {
   try {
-    const response = await api.get('/songs', {
+    // Cache-busting: add a timestamp to ensure we always get the latest version
+    const timestamp = new Date().getTime();
+    const url = force ? `/songs?force=true&t=${timestamp}` : `/songs?t=${timestamp}`;
+    const response = await api.get(url, {
       timeout: 15000
     });
     
