@@ -1,58 +1,58 @@
 import { Home, Search, Heart, PlusSquare, ListMusic, ShieldCheck, Music } from 'lucide-react';
 import { useMusic } from '../MusicContext';
 
-export const Sidebar = ({ onClose }) => {
+export const Sidebar = () => {
   const { currentView, setView, playlists, createPlaylist, setSelectedPlaylist, selectedPlaylistId } = useMusic();
-
-  const handleNavClick = (view) => {
-    setView(view);
-    if (onClose) onClose();
-  };
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'search', icon: Search, label: 'Search' },
     { id: 'liked', icon: Heart, label: 'Liked Songs' },
+    { id: 'admin', icon: ShieldCheck, label: 'Admin Dashboard' },
   ];
 
   return (
-    <div className="w-full h-full bg-[#0a0a0a] p-6 flex flex-col gap-8">
-      {/* Brand Logo */}
-      <div className="flex items-center gap-3 px-2">
-        <div className="w-10 h-10 bg-accent-primary rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,0,0,0.3)]">
-          <Music size={24} className="text-black" fill="black" />
+    <div className="w-full h-full bg-black flex flex-col gap-2 p-2">
+      {/* Top Nav Box */}
+      <div className="bg-bg-elevated rounded-lg p-4 flex flex-col gap-4">
+        <div className="flex items-center gap-2 px-2 mb-2">
+          <Music size={28} className="text-accent-primary" fill="currentColor" />
+          <span className="font-black text-xl tracking-tight">VMUSIC</span>
         </div>
-        <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">VMUSIC</h1>
+        
+        <nav className="flex flex-col gap-1">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setView(item.id)}
+              className={`spotify-nav-item ${currentView === item.id ? 'active' : ''}`}
+            >
+              <item.icon size={24} strokeWidth={currentView === item.id ? 2.5 : 2} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
       </div>
 
-      <nav className="flex flex-col gap-1">
-        {navItems.map((item) => (
-          <NavItem 
-            key={item.id} 
-            icon={item.icon} 
-            label={item.label} 
-            view={item.id} 
-            currentView={currentView} 
-            setView={setView} 
-          />
-        ))}
-      </nav>
-
-      <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Your Playlists</h2>
+      {/* Library Box */}
+      <div className="flex-1 bg-bg-elevated rounded-lg p-2 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3 text-text-muted hover:text-white transition-colors cursor-pointer">
+            <ListMusic size={24} />
+            <span className="font-bold text-sm">Your Library</span>
+          </div>
           <button 
             onClick={() => {
               const name = prompt('Playlist name:');
               if (name) createPlaylist(name);
             }} 
-            className="text-text-secondary hover:text-accent-primary transition-colors p-1"
+            className="spotify-btn-icon"
           >
-            <PlusSquare size={18} />
+            <PlusSquare size={20} />
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-1">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           {playlists.map((playlist) => (
             <button
               key={playlist.id}
@@ -60,45 +60,26 @@ export const Sidebar = ({ onClose }) => {
                 setView('playlist');
                 setSelectedPlaylist(playlist.id);
               }}
-              className={`group px-4 py-3 rounded-xl text-sm font-bold text-left transition-all duration-300 flex items-center justify-between ${
-                currentView === 'playlist' && selectedPlaylistId === playlist.id
-                  ? 'bg-white/10 text-white shadow-lg'
-                  : 'text-text-secondary hover:text-white hover:bg-white/5'
+              className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-md ${
+                currentView === 'playlist' && selectedPlaylistId === playlist.id ? 'bg-white/10' : ''
               }`}
             >
-              <span className="truncate">{playlist.name}</span>
-              <div className={`w-1.5 h-1.5 rounded-full bg-accent-primary transition-opacity duration-300 ${currentView === 'playlist' && selectedPlaylistId === playlist.id ? 'opacity-100' : 'opacity-0'}`} />
+              <div className="w-12 h-12 bg-bg-highlight rounded flex items-center justify-center text-text-muted">
+                <Music size={20} />
+              </div>
+              <div className="flex flex-col items-start min-w-0">
+                <span className={`text-sm font-bold truncate w-full ${currentView === 'playlist' && selectedPlaylistId === playlist.id ? 'text-accent-primary' : 'text-white'}`}>
+                  {playlist.name}
+                </span>
+                <span className="text-xs text-text-muted font-medium">Playlist • {playlist.songs?.length || 0} songs</span>
+              </div>
             </button>
           ))}
         </div>
-      </div>
-      
-      <div className="pt-6 border-t border-white/5">
-        <NavItem 
-          icon={ShieldCheck} 
-          label="Admin Dashboard" 
-          view="admin" 
-          currentView={currentView} 
-          setView={setView} 
-        />
       </div>
     </div>
   );
 };
 
-const NavItem = ({ icon: Icon, label, view, currentView, setView }) => {
-  const active = currentView === view;
-  return (
-    <button
-      onClick={() => setView(view)}
-      className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 group ${
-        active 
-          ? 'bg-accent-primary text-black shadow-[0_10px_20px_rgba(255,0,0,0.2)]' 
-          : 'text-text-secondary hover:text-white hover:bg-white/5'
-      }`}
-    >
-      <Icon size={20} strokeWidth={active ? 2.5 : 2} className={active ? '' : 'group-hover:scale-110 transition-transform'} />
-      <span className={`text-sm font-black tracking-tight ${active ? '' : 'group-hover:translate-x-1 transition-transform'}`}>{label}</span>
-    </button>
-  );
-};
+// Remove NavItem as it's no longer used
+const NavItem = null;

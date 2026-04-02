@@ -1,25 +1,13 @@
-import { Play, Heart, Plus, Music } from 'lucide-react';
+import { Play, Heart, Plus, Music, Pause } from 'lucide-react';
 import { useMusic } from '../MusicContext';
 import { useState, useRef, useEffect } from 'react';
 
 export const SongCard = ({ song }) => {
-  const { currentSong, isPlaying, setCurrentSong, setIsPlaying, toggleLike, likedSongs, playlists, addToPlaylist } = useMusic();
-  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
-  const playlistMenuRef = useRef(null);
+  const { currentSong, isPlaying, setCurrentSong, setIsPlaying, toggleLike, likedSongs } = useMusic();
 
   const isCurrentSong = currentSong?.id === song.id;
   const isCurrentlyPlaying = isCurrentSong && isPlaying;
   const isLiked = likedSongs.some(s => s.id === song.id);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (playlistMenuRef.current && !playlistMenuRef.current.contains(event.target)) {
-        setShowPlaylistMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   return (
     <div 
@@ -27,99 +15,44 @@ export const SongCard = ({ song }) => {
         setCurrentSong(song);
         setIsPlaying(true);
       }}
-      className={`group relative glass-effect p-3 md:p-4 rounded-2xl transition-all duration-500 cursor-pointer overflow-hidden border border-white/5 hover:border-accent-primary/20 hover:bg-white/5 active:scale-95 active:bg-white/10 ${isCurrentSong ? 'ring-1 ring-accent-primary/50 bg-white/5' : ''}`}
+      className="spotify-card group"
     >
-      <div className="relative mb-3 md:mb-4 overflow-hidden rounded-xl aspect-square shadow-2xl">
-        {isCurrentSong && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-            <div className={`relative w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-accent-primary flex items-center justify-center bg-black/80 shadow-[0_0_20px_rgba(255,0,0,0.4)] ${isCurrentlyPlaying ? 'animate-[spin_6s_linear_infinite]' : ''}`}>
-              {isCurrentlyPlaying ? (
-                <div className="playing-bars">
-                  <div className="playing-bar" />
-                  <div className="playing-bar" />
-                  <div className="playing-bar" />
-                </div>
-              ) : (
-                <Music className="text-accent-primary" size={16} md:size={20} />
-              )}
-            </div>
-          </div>
-        )}
-
+      <div className="relative mb-4 aspect-square shadow-2xl overflow-hidden rounded-md">
         <img 
           src={song.thumbnail} 
           alt={song.title} 
-          className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isCurrentSong ? 'scale-105 brightness-50' : 'brightness-90 group-hover:brightness-100'}`} 
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
         />
         
-        {/* Professional Play Overlay (Desktop) */}
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex items-center justify-center">
-          <div className="p-4 bg-accent-primary text-black rounded-full shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-300">
-            <Play size={24} fill="currentColor" />
-          </div>
+        {/* Play Button Overlay */}
+        <div className="absolute bottom-2 right-2 translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+          <button className="w-12 h-12 bg-accent-primary text-black rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all">
+            {isCurrentlyPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
+          </button>
         </div>
+
+        {isCurrentSong && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            {isCurrentlyPlaying ? (
+              <div className="playing-bars">
+                <div className="playing-bar" />
+                <div className="playing-bar" />
+                <div className="playing-bar" />
+              </div>
+            ) : (
+              <Play size={40} className="text-white" fill="white" />
+            )}
+          </div>
+        )}
       </div>
       
-      <div className="flex flex-col gap-0.5 md:gap-1 relative z-20">
-        <h3 className={`font-black truncate text-xs md:text-sm tracking-tight transition-colors ${isCurrentSong ? 'text-accent-primary' : 'text-white'}`}>
+      <div className="flex flex-col gap-1 min-w-0">
+        <h3 className={`font-bold truncate text-base ${isCurrentSong ? 'text-accent-primary' : 'text-white'}`}>
           {song.title}
         </h3>
-        <p className="text-[10px] md:text-xs text-text-muted truncate font-bold opacity-70 group-hover:opacity-100 transition-opacity">
+        <p className="text-sm text-text-muted truncate font-medium group-hover:text-white transition-colors">
           {song.artist || 'Unknown Artist'}
         </p>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="mt-3 flex items-center justify-between relative z-20 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-300">
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleLike(song);
-          }}
-          className={`p-2 -ml-2 rounded-full hover:bg-white/10 transition-all active:scale-125 ${isLiked ? 'text-accent-primary' : 'text-text-muted hover:text-white'}`}
-        >
-          <Heart size={16} md:size={18} fill={isLiked ? 'currentColor' : 'none'} strokeWidth={isLiked ? 0 : 2.5} />
-        </button>
-        
-        <div className="relative">
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowPlaylistMenu(!showPlaylistMenu);
-            }}
-            className="p-2 -mr-2 text-text-muted hover:text-white hover:bg-white/10 rounded-full transition-all active:rotate-90"
-          >
-            <Plus size={16} md:size={18} strokeWidth={2.5} />
-          </button>
-
-          {showPlaylistMenu && (
-            <div 
-              ref={playlistMenuRef} 
-              className="absolute bottom-full right-0 mb-2 w-48 bg-[#181818] border border-white/10 rounded-xl shadow-2xl z-50 py-2 animate-slide-down"
-            >
-              <div className="px-4 py-2 text-[10px] font-black text-text-muted uppercase tracking-[0.1em] border-b border-white/5 mb-1">Add to Playlist</div>
-              <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                {playlists.length > 0 ? (
-                  playlists.map(p => (
-                    <button
-                      key={p.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToPlaylist(p.id, song);
-                        setShowPlaylistMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-primary hover:text-black transition-all truncate"
-                    >
-                      {p.name}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-3 text-xs text-text-muted italic">No playlists found</div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

@@ -37,7 +37,10 @@ export const AdminPage = () => {
       setStatus('success');
       setMessage(response.data.message);
       setUrl('');
-      refreshSongs();
+      // Add a small delay to allow GitHub/server to process the download before refreshing
+      setTimeout(() => {
+        refreshSongs();
+      }, 3000);
     } catch (error) {
       console.error('Download Error:', error);
       setStatus('error');
@@ -124,7 +127,10 @@ export const AdminPage = () => {
       if (successCount > 0) {
         setStatus('success');
         setMessage(`Successfully uploaded ${successCount} songs.${failCount > 0 ? ` (${failCount} failed)` : ''}`);
-        refreshSongs();
+        // Add a small delay to allow GitHub to process the files before refreshing
+        setTimeout(() => {
+          refreshSongs();
+        }, 2000);
       } else if (failCount > 0) {
         setStatus('error');
         setMessage(`Failed to upload ${failCount} songs. Please try again.`);

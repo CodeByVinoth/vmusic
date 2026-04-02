@@ -7,13 +7,24 @@ export default {
   theme: {
     extend: {
       colors: {
-        'accent-primary': '#ff0000',
-        'accent-secondary': '#cc0000',
+        'accent-primary': '#1db954', // Spotify Green
+        'accent-secondary': '#1ed760',
         'bg-base': '#000000',
-        'bg-elevated': '#0a0a0a',
-        'bg-highlight': '#1a1a1a',
+        'bg-elevated': '#121212',
+        'bg-highlight': '#282828',
+        'bg-press': '#000000',
         'text-main': '#ffffff',
-        'text-secondary': '#9ca3af',
+        'text-secondary': '#b3b3b3',
+      },
+      spacing: {
+        'sidebar': '240px',
+        'player-height': '90px',
+      },
+      borderRadius: {
+        'spotify': '4px',
+      },
+      fontSize: {
+        'xxs': '11px',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

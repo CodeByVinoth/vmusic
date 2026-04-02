@@ -5,13 +5,13 @@
 @tailwind utilities;
 
 :root {
-  --accent-primary: #ff0000;
-  --accent-secondary: #cc0000;
+  --accent-primary: #1db954;
+  --accent-secondary: #1ed760;
   --bg-base: #000000;
-  --bg-elevated: #0a0a0a;
-  --bg-highlight: #1a1a1a;
+  --bg-elevated: #121212;
+  --bg-highlight: #282828;
   --text-main: #ffffff;
-  --text-muted: #9ca3af;
+  --text-muted: #b3b3b3;
 }
 
 body {
@@ -24,42 +24,33 @@ body {
   background-color: var(--bg-base);
   color: var(--text-main);
   overflow: hidden;
+  user-select: none;
 }
 
 @layer utilities {
-  .glass-effect {
-    @apply bg-bg-elevated/60 backdrop-blur-2xl border border-white/5 shadow-2xl;
+  .spotify-card {
+    background-color: rgba(18, 18, 18, 0.4);
+    @apply transition-all duration-300 p-4 rounded-lg cursor-pointer;
   }
   
-  .animate-fade-in {
-    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  .spotify-card:hover {
+    background-color: rgba(40, 40, 40, 0.6);
+  }
+  
+  .spotify-btn-primary {
+    @apply bg-accent-primary hover:bg-accent-secondary text-black font-bold py-3 px-8 rounded-full transition-all duration-300 transform active:scale-95;
   }
 
-  .animate-slide-up {
-    animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  .spotify-btn-icon {
+    @apply text-text-secondary hover:text-white transition-all duration-200 active:scale-90;
   }
 
-  .animate-slide-down {
-    animation: slideDown 0.3s ease-out;
+  .spotify-nav-item {
+    @apply flex items-center gap-4 px-4 py-2 text-text-secondary hover:text-white transition-all duration-200 font-bold text-sm;
   }
 
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-
-  @keyframes slideDown {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+  .spotify-nav-item.active {
+    @apply text-white;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -69,44 +60,38 @@ body {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full border-4 border-transparent bg-clip-padding hover:bg-white/20 transition-colors;
+    background-color: rgba(255, 255, 255, 0.2);
+    @apply transition-colors;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
   }
 }
 
-/* Custom Slider Styling */
-.slider-container {
-  @apply relative w-full h-1 bg-white/10 rounded-full cursor-pointer;
-}
-
-.slider-progress {
-  @apply absolute left-0 top-0 h-full bg-accent-primary rounded-full transition-colors;
-}
-
-.slider-container:hover .slider-progress {
-  @apply bg-accent-secondary;
-}
-
-.slider-thumb {
-  @apply absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 transition-opacity;
-}
-
-.slider-container:hover .slider-thumb {
-  @apply opacity-100;
-}
-
-/* Range input reset for cross-browser consistency */
+/* Range input Spotify style */
 input[type="range"] {
   -webkit-appearance: none;
-  width: 100%;
   background: transparent;
+  height: 4px;
+  @apply rounded-full cursor-pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  background-color: rgba(255, 255, 255, 0.2);
+  @apply h-1 rounded-full;
 }
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
+  @apply w-3 h-3 bg-white rounded-full -mt-1 opacity-0 transition-opacity;
 }
 
-input[type="range"]:focus {
-  outline: none;
+.group:hover input[type="range"]::-webkit-slider-thumb {
+  @apply opacity-100;
+}
+
+input[type="range"]:hover::-webkit-slider-runnable-track {
+  @apply bg-accent-primary;
 }
 
 .pb-safe {
@@ -118,7 +103,7 @@ input[type="range"]:focus {
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  height: 12px;
+  height: 14px;
 }
 
 .playing-bar {
@@ -132,5 +117,14 @@ input[type="range"]:focus {
 
 @keyframes sound-wave {
   0%, 100% { height: 4px; }
-  50% { height: 12px; }
+  50% { height: 14px; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
 }
