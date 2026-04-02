@@ -64,20 +64,9 @@ const protectAdmin = (req, res, next) => {
 };
 
 
-// Configure Multer for local file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const tempDir = '/tmp'; // Use Vercel's writable directory
-    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-    cb(null, tempDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `local_${Date.now()}_${file.originalname.replace(/\s+/g, '_')}`);
-  }
-});
-
+// Configure Multer for local file uploads - Use memoryStorage for Vercel compatibility
 const upload = multer({ 
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
 });
 
@@ -89,14 +78,12 @@ router.post('/upload-local', protectAdmin, upload.single('file'), async (req, re
     return res.status(500).json({ error: 'GitHub configuration missing on server' });
   }
 
-  const filePath = req.file.path;
   const originalName = req.file.originalname;
 
   try {
-    console.log(`Uploading local file to GitHub: ${originalName}`);
+    console.log(`Uploading local file to GitHub (from memory): ${originalName}`);
 
-    const fileBuffer = await fs.promises.readFile(filePath);
-    const contentBase64 = fileBuffer.toString('base64');
+    const contentBase64 = req.file.buffer.toString('base64');
     const timestamp = Date.now();
     const githubPath = `songs/local_${timestamp}_${originalName.replace(/\s+/g, '_')}`;
 
@@ -119,9 +106,6 @@ router.post('/upload-local', protectAdmin, upload.single('file'), async (req, re
       }
     );
 
-    // Cleanup temp file
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-
     // Clear song list cache
     clearCache();
 
@@ -136,7 +120,6 @@ router.post('/upload-local', protectAdmin, upload.single('file'), async (req, re
     });
   } catch (error) {
     console.error('Local Upload Error:', error.message);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     res.status(500).json({ 
       error: 'Failed to upload local file', 
       details: error.response?.data?.message || error.message 

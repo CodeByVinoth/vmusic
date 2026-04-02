@@ -162,9 +162,9 @@ router.get('/songs', async (req, res) => {
         const placeholders = [
           'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&h=500&fit=crop',
           'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=500&h=500&fit=crop',
-          'https://images.unsplash.com/photo-1459749411177-042180ce673c?w=500&h=500&fit=crop',
           'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&h=500&fit=crop',
-          'https://images.unsplash.com/photo-1514525253361-bee8718a300a?w=500&h=500&fit=crop'
+          'https://images.unsplash.com/photo-1514525253361-bee8718a300a?w=500&h=500&fit=crop',
+          'https://images.unsplash.com/photo-1459749411177-042180ce673f?w=500&h=500&fit=crop'
         ];
 
         // 1. Remove extension

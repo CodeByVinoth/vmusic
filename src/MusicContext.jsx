@@ -8,8 +8,9 @@ const MusicContext = createContext(undefined);
 const REPEAT_IMAGES = [
   'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80',
   'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=800&q=80',
-  'https://images.unsplash.com/photo-1459749411177-042180ce673f?w=800&q=80',
-  'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80'
+  'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80',
+  'https://images.unsplash.com/photo-1514525253361-bee8718a300a?w=800&q=80',
+  'https://images.unsplash.com/photo-1459749411177-042180ce673f?w=800&q=80'
 ];
 
 const getRepeatedThumbnail = (songId) => {
