@@ -126,28 +126,47 @@ router.post('/download', async (req, res) => {
     console.log(`Starting optimized download with yt-dlp for: ${url}`);
     
     // 1. Get metadata with yt-dlp
-    const info = await youtubeDl(url, {
-      dumpSingleJson: true,
-      noWarnings: true,
-      noCallHome: true,
-      noCheckCertificate: true,
-      preferFreeFormats: true,
-      youtubeSkipDashManifest: true,
-    });
+    let info;
+    try {
+      info = await youtubeDl(url, {
+        dumpSingleJson: true,
+        noWarnings: true,
+        noCheckCertificate: true,
+        preferFreeFormats: true,
+      });
+    } catch (metadataError) {
+      console.error('Metadata fetch failed:', metadataError.message);
+      // Try with basic options if advanced options fail
+      info = await youtubeDl(url, {
+        dumpSingleJson: true,
+        noWarnings: true,
+      });
+    }
 
     const videoTitle = (info.title || 'Unknown Title').replace(/[^\w\s]/gi, '').substring(0, 50);
     const fileName = `song_${videoTitle.replace(/\s+/g, '_')}_${timestamp}.mp3`;
     const filePath = path.join(tempDir, fileName);
 
     // 2. Download audio with yt-dlp
-    await youtubeDl(url, {
-      extractAudio: true,
-      audioFormat: 'mp3',
-      output: filePath,
-      noCheckCertificate: true,
-      noWarnings: true,
-      ffmpegLocation: ffmpegPath,
-    });
+    try {
+      await youtubeDl(url, {
+        extractAudio: true,
+        audioFormat: 'mp3',
+        output: filePath,
+        noCheckCertificate: true,
+        noWarnings: true,
+        ffmpegLocation: ffmpegPath,
+      });
+    } catch (downloadError) {
+      console.error('Download failed:', downloadError.message);
+      // Try with basic options if advanced options fail
+      await youtubeDl(url, {
+        extractAudio: true,
+        audioFormat: 'mp3',
+        output: filePath,
+        noWarnings: true,
+      });
+    }
 
     if (!fs.existsSync(filePath)) {
       throw new Error('Downloaded file not found');
