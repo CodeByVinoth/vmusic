@@ -278,7 +278,17 @@ export const AdminPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filteredSongs.length > 0 ? (
+              {songs.length === 0 ? (
+                <tr>
+                  <td colSpan="3" className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3 opacity-50">
+                      <Music size={48} />
+                      <p className="text-sm font-bold uppercase tracking-widest mt-2">Your library is empty</p>
+                      <p className="text-xs text-text-secondary">Use the forms above to add new music.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredSongs.length > 0 ? (
                 filteredSongs.map((song) => (
                   <SongAdminRow 
                     key={song.id} 
@@ -291,8 +301,9 @@ export const AdminPage = () => {
                 <tr>
                   <td colSpan="3" className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-20">
-                      <Music size={48} />
+                      <Search size={48} />
                       <p className="text-sm font-bold uppercase tracking-widest">No songs found</p>
+                      <p className="text-xs text-text-secondary mt-1">Try a different search query.</p>
                     </div>
                   </td>
                 </tr>

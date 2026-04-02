@@ -72,7 +72,11 @@ export const MainView = ({ activeTab }) => {
               ) : songs.length > 0 ? (
                 songs.map((song) => <SongCard key={song.id} song={song} />)
               ) : (
-                <div className="col-span-full py-20 text-center opacity-50 font-medium">No songs found in your library.</div>
+                <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 glass-effect rounded-3xl border border-white/5">
+                  <Music size={48} className="text-white/10" />
+                  <p className="text-text-secondary font-medium">Your music library is empty.</p>
+                  <p className="text-sm text-text-secondary/50">Upload some songs to get started!</p>
+                </div>
               )}
             </div>
           </div>
