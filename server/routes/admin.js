@@ -199,7 +199,7 @@ router.post('/download', async (req, res) => {
       song: {
         id: uploadResponse.data.content.sha,
         title: videoTitle.replace(/_/g, ' '),
-        url: `${API_BASE_URL}/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.API_KEY}`
+        url: `/api/stream?path=${encodeURIComponent(githubPath)}&key=${process.env.VITE_API_KEY}`
       }
     });
 
@@ -213,7 +213,7 @@ router.post('/download', async (req, res) => {
 });
 
 // Admin: Delete song from GitHub
-router.delete('/songs', protectAdmin, async (req, res) => {
+router.delete('/songs', async (req, res) => {
   const { path: filePath, sha } = req.query;
   
   if (!filePath || !sha) {
@@ -221,8 +221,10 @@ router.delete('/songs', protectAdmin, async (req, res) => {
   }
 
   try {
+    const encodedPath = filePath.split('/').map(segment => encodeURIComponent(segment)).join('/');
+    
     await axios.delete(
-      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
+      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodedPath}`,
       {
         data: {
           message: `Delete song: ${filePath}`,
