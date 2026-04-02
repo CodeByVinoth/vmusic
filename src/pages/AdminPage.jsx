@@ -46,9 +46,18 @@ export const AdminPage = () => {
     setMessage('');
 
     try {
-      const response = await api.post('/admin/download', { url });
+      // Updated to fetch from the new Python API route
+      const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to process download');
+      }
+      
+      const data = await response.json();
+      
       setStatus('success');
-      setMessage(response.data.message);
+      setMessage('Successfully processed download!');
       setUrl('');
       setTimeout(() => {
         refreshSongs(true);
@@ -56,7 +65,7 @@ export const AdminPage = () => {
     } catch (error) {
       console.error('Download Error:', error);
       setStatus('error');
-      setMessage(error.response?.data?.details || 'Failed to process download');
+      setMessage(error.message || 'Failed to process download');
     } finally {
       setIsDownloading(false);
     }
@@ -398,17 +407,9 @@ export const AdminPage = () => {
                       <div className="flex items-center gap-3">
                         <div className="relative flex-shrink-0">
                           <div className="w-12 h-12 rounded-lg overflow-hidden shadow-md">
-                            {song.thumbnail ? (
-                              <img
-                                src={song.thumbnail}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-[#282828] flex items-center justify-center">
-                                <Music size={18} className="text-[#b3b3b3]" />
-                              </div>
-                            )}
+                            <div className="w-full h-full bg-[#282828] flex items-center justify-center">
+                              <Music size={18} className="text-[#b3b3b3]" />
+                            </div>
                           </div>
                           {isDeleting === song.id && (
                             <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
