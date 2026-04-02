@@ -71,7 +71,7 @@ const upload = multer({
 });
 
 // Admin: Upload local file to GitHub
-router.post('/create-upload-url', protectAdmin, async (req, res) => {
+router.post('/create-upload-url', async (req, res) => {
   const { filename, filetype } = req.body;
   if (!filename || !filetype) {
     return res.status(400).json({ error: 'Filename and filetype are required' });
@@ -104,7 +104,7 @@ router.post('/create-upload-url', protectAdmin, async (req, res) => {
 });
 
 // Admin: Download and Upload from YouTube to GitHub
-router.post('/download', protectAdmin, async (req, res) => {
+router.post('/download', async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL is required' });
 
