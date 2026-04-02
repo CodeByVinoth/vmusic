@@ -21,6 +21,14 @@ const authMiddleware = (req, res, next) => {
   const apiKey = req.headers['x-api-key'] || req.query.key;
   const expectedKey = process.env.API_KEY;
   
+  if (!expectedKey) {
+    console.error('CRITICAL: API_KEY is not set in environment variables!');
+    return res.status(500).json({ 
+      error: 'Server Configuration Error', 
+      message: 'API_KEY is missing on the server. Please check Vercel settings.' 
+    });
+  }
+  
   if (!apiKey || apiKey !== expectedKey) {
     return res.status(403).json({ error: 'Unauthorized', message: 'Invalid or missing API key' });
   }
