@@ -4,9 +4,7 @@
     {
       "src": "package.json",
       "use": "@vercel/static-build",
-      "options": {
-        "buildCommand": "vite build"
-      }
+      "buildCommand": "vite build"
     },
     {
       "src": "api/index.js",
