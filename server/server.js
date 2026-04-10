@@ -18,8 +18,11 @@ app.use(express.json({ limit: '50mb' }));
 
 // Security Middleware: API Key or JWT check
 const authMiddleware = (req, res, next) => {
-  // Allow login route without auth
-  if (req.path === '/admin/login' || req.path.endsWith('manifest.webmanifest')) {
+  // Allow public routes without auth
+  const publicRoutes = ['/admin/login', '/songs'];
+  const path = req.path.replace(/\/$/, ''); // Remove trailing slash for matching
+  
+  if (publicRoutes.includes(path) || req.path.endsWith('manifest.webmanifest')) {
     return next();
   }
 
