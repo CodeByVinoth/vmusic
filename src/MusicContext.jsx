@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { fetchSongs } from './api';
 
 const MusicContext = createContext(undefined);
@@ -77,7 +77,6 @@ export const MusicProvider = ({ children }) => {
   }, [likedSongs]);
 
   const refreshSongs = useCallback(async (force = false) => {
-    // Only show loading spinner on initial load, not on forced background refreshes
     if (!songs.length) {
       setIsLoading(true);
     }
@@ -93,11 +92,116 @@ export const MusicProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [songs.length]);
 
   useEffect(() => {
     refreshSongs();
   }, [refreshSongs]);
+  
+  // Central Audio Management
+  const audioRef = useRef(new Audio());
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [volume, setVolume] = useState(() => {
+    const saved = localStorage.getItem('volume');
+    return saved ? Number(saved) : 0.5;
+  });
+  const [isMuted, setIsMuted] = useState(false);
+  const [isRepeat, setIsRepeat] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
+
+  // Sync audio with current song
+  useEffect(() => {
+    if (currentSong?.url) {
+      audioRef.current.src = currentSong.url;
+      if (isPlaying) {
+        audioRef.current.play().catch(err => console.error("Playback failed", err));
+      }
+    }
+  }, [currentSong?.id]);
+
+  // Sync play/pause state
+  useEffect(() => {
+    if (isPlaying) {
+      audioRef.current.play().catch(err => console.error("Playback failed", err));
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  // Sync volume
+  useEffect(() => {
+    audioRef.current.volume = isMuted ? 0 : volume;
+    localStorage.setItem('volume', volume.toString());
+  }, [volume, isMuted]);
+
+  // Audio Event Listeners
+  useEffect(() => {
+    const audio = audioRef.current;
+    
+    const handleTimeUpdate = () => {
+      if (!isScrubbing) {
+        setProgress(audio.currentTime);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+
+    const handleEnded = () => {
+      if (isRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+      } else {
+        skipForward();
+      }
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [isScrubbing, isRepeat]);
+
+  const seek = useCallback((time) => {
+    setIsScrubbing(true);
+    audioRef.current.currentTime = time;
+    setProgress(time);
+    // Use a small delay to prevent the 'jump' back to old time before timeupdate catches up
+    setTimeout(() => setIsScrubbing(false), 100);
+  }, []);
+
+  const skipForward = useCallback(() => {
+    if (!songs.length || !currentSong) return;
+    const currentIndex = songs.findIndex(s => s.id === currentSong.id);
+    let nextIndex;
+    if (isShuffle) {
+      nextIndex = Math.floor(Math.random() * songs.length);
+    } else {
+      nextIndex = (currentIndex + 1) % songs.length;
+    }
+    setCurrentSong(songs[nextIndex]);
+    setIsPlaying(true);
+  }, [songs, currentSong, isShuffle]);
+
+  const skipBack = useCallback(() => {
+    if (!songs.length || !currentSong) return;
+    if (audioRef.current.currentTime > 3) {
+      audioRef.current.currentTime = 0;
+      return;
+    }
+    const currentIndex = songs.findIndex(s => s.id === currentSong.id);
+    const prevIndex = (currentIndex - 1 + songs.length) % songs.length;
+    setCurrentSong(songs[prevIndex]);
+    setIsPlaying(true);
+  }, [songs, currentSong]);
 
   const toggleLike = useCallback((song) => {
     setLikedSongs(prev => {
@@ -145,6 +249,12 @@ export const MusicProvider = ({ children }) => {
     selectedPlaylistId,
     isLoading,
     error,
+    progress,
+    duration,
+    volume,
+    isMuted,
+    isRepeat,
+    isShuffle,
     setCurrentSong,
     setIsPlaying,
     setView,
@@ -153,8 +263,15 @@ export const MusicProvider = ({ children }) => {
     addToPlaylist,
     removeFromPlaylist,
     setSelectedPlaylist,
-    refreshSongs
-  }), [songs, currentSong, isPlaying, currentView, likedSongs, playlists, selectedPlaylistId, isLoading, error, refreshSongs, toggleLike, createPlaylist, addToPlaylist, removeFromPlaylist]);
+    refreshSongs,
+    seek,
+    skipForward,
+    skipBack,
+    setVolume,
+    setIsMuted,
+    setIsRepeat,
+    setIsShuffle
+  }), [songs, currentSong, isPlaying, currentView, likedSongs, playlists, selectedPlaylistId, isLoading, error, progress, duration, volume, isMuted, isRepeat, isShuffle, refreshSongs, toggleLike, createPlaylist, addToPlaylist, removeFromPlaylist, seek, skipForward, skipBack]);
 
   return (
     <MusicContext.Provider value={value}>

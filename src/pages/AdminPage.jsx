@@ -15,6 +15,9 @@ import {
   Music,
   AlertCircle,
   FileAudio,
+  Download,
+  ChevronRight,
+  Play,
 } from 'lucide-react';
 
 export const AdminPage = () => {
@@ -27,7 +30,50 @@ export const AdminPage = () => {
   const [status, setStatus] = useState(null);
   const [message, setMessage] = useState('');
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
+  const [youtubeQuery, setYoutubeQuery] = useState('');
+  const [youtubeResults, setYoutubeResults] = useState([]);
+  const [isSearchingYoutube, setIsSearchingYoutube] = useState(false);
+  const [searchMode, setSearchMode] = useState('videos'); // 'videos' or 'playlists'
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [playlistVideos, setPlaylistVideos] = useState([]);
+  const [isLoadingPlaylist, setIsLoadingPlaylist] = useState(false);
+  const [downloadingSongId, setDownloadingSongId] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadStage, setDownloadStage] = useState(''); // 'download' or 'upload'
+  const [currentSong, setCurrentSong] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [downloadingSongs, setDownloadingSongs] = useState(() => {
+    // Load downloading songs from localStorage on mount
+    try {
+      const saved = localStorage.getItem('vmusic_downloading');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const fileInputRef = useRef(null);
+  const audioRef = useRef(null);
+
+  // Save downloading songs to localStorage whenever it changes
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('vmusic_downloading', JSON.stringify(downloadingSongs));
+    } catch (e) {
+      console.error('Failed to save downloading state:', e);
+    }
+  }, [downloadingSongs]);
+
+  // Check if a song is already in the library
+  const isSongInLibrary = (songTitle) => {
+    return songs.some(s => s.title === songTitle);
+  };
+
+  // Play song directly in website using YouTube embed
+  const playSongInWebsite = (song) => {
+    // Create a temporary window with YouTube embed player
+    const embedUrl = song.url.replace('watch?v=', 'embed/');
+    window.open(embedUrl, '_blank', 'width=800,height=600');
+  };
 
   const filteredSongs = useMemo(() => {
     return songs.filter(
@@ -36,6 +82,130 @@ export const AdminPage = () => {
         (s.artist && s.artist.toLowerCase().includes(adminSearchQuery.toLowerCase()))
     );
   }, [songs, adminSearchQuery]);
+
+  const handleYoutubeSearch = async (e) => {
+    e.preventDefault();
+    if (!youtubeQuery.trim()) return;
+
+    setIsSearchingYoutube(true);
+    setYoutubeResults([]);
+    setSelectedPlaylist(null);
+    setPlaylistVideos([]);
+    setStatus(null);
+
+    try {
+      const endpoint = searchMode === 'videos' ? '/admin/search-youtube' : '/admin/search-youtube-playlists';
+      const response = await api.get(`${endpoint}?keyword=${encodeURIComponent(youtubeQuery)}`, {
+        headers: {
+          'x-api-key': import.meta.env.VITE_API_KEY || 'song_app_secret_123'
+        }
+      });
+      setYoutubeResults(response.data || []);
+      if (response.data.length === 0) {
+        setStatus('error');
+        setMessage(`No ${searchMode} found on YouTube`);
+      }
+    } catch (error) {
+      console.error('YouTube Search Error:', error);
+      const details = error.response?.data?.details || error.response?.data?.message || error.message;
+      const statusText = error.response?.status ? ` (HTTP ${error.response.status})` : '';
+      setStatus('error');
+      setMessage(`${details}${statusText}`);
+    } finally {
+      setIsSearchingYoutube(false);
+    }
+  };
+
+  const fetchPlaylistVideos = async (playlist) => {
+    setSelectedPlaylist(playlist);
+    setIsLoadingPlaylist(true);
+    setPlaylistVideos([]);
+
+    try {
+      const response = await api.get(`/admin/youtube-playlist-videos?id=${playlist.id}`, {
+        headers: {
+          'x-api-key': import.meta.env.VITE_API_KEY || 'song_app_secret_123'
+        }
+      });
+      setPlaylistVideos(response.data || []);
+    } catch (error) {
+      console.error('Playlist Videos Error:', error);
+      setStatus('error');
+      setMessage('Failed to fetch videos for this playlist');
+    } finally {
+      setIsLoadingPlaylist(false);
+    }
+  };
+
+  const handleYoutubeDownload = async (song) => {
+    // Check if song is already in library
+    if (isSongInLibrary(song.title)) {
+      setStatus('success');
+      setMessage(`"${song.title}" is already in your library!`);
+      return;
+    }
+
+    if (downloadingSongId) return; // Prevent multiple concurrent downloads
+    
+    // Add to downloading list
+    setDownloadingSongs(prev => [...prev, { id: song.id, title: song.title, url: song.url, progress: 0, stage: 'Downloading' }]);
+    setDownloadingSongId(song.id);
+    setDownloadProgress(0);
+    setDownloadStage('');
+    setStatus(null);
+    setMessage('');
+    setUrl(song.url);
+
+    try {
+      // Create a custom axios instance to track progress
+      const response = await axios.post('/api/admin/download', {
+        url: song.url,
+        title: song.title
+      }, {
+        onUploadProgress: (progressEvent) => {
+          // This tracks the upload progress to GitHub
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setDownloadProgress(progress);
+          setDownloadStage('Uploading to GitHub');
+          // Update downloading list
+          setDownloadingSongs(prev => prev.map(s => s.id === song.id ? { ...s, progress, stage: 'Uploading' } : s));
+        },
+        onDownloadProgress: (progressEvent) => {
+          // This would track download progress if the server sends it
+          // Note: This depends on server implementation
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setDownloadProgress(progress);
+          setDownloadStage('Downloading from YouTube');
+          // Update downloading list
+          setDownloadingSongs(prev => prev.map(s => s.id === song.id ? { ...s, progress, stage: 'Downloading' } : s));
+        }
+      });
+      
+      setDownloadProgress(100);
+      setDownloadStage('Complete');
+      setStatus('success');
+      setMessage(`Successfully downloaded and uploaded "${song.title}"!`);
+      setUrl('');
+      
+      // Remove from downloading list
+      setDownloadingSongs(prev => prev.filter(s => s.id !== song.id));
+      
+      setTimeout(() => {
+        refreshSongs(true);
+      }, 1000);
+    } catch (error) {
+      console.error('YouTube Download Error:', error);
+      const details = error.response?.data?.details || error.response?.data?.message || error.message;
+      setStatus('error');
+      setMessage(details || 'Failed to process YouTube download');
+      // Remove from downloading list on error
+      setDownloadingSongs(prev => prev.filter(s => s.id !== song.id));
+    } finally {
+      setDownloadingSongId(null);
+      setDownloadProgress(0);
+      setDownloadStage('');
+    }
+  };
 
   const handleDownload = async (e) => {
     e.preventDefault();
@@ -206,7 +376,7 @@ export const AdminPage = () => {
         >
           <LogOut size={18} />
           <span className="hidden sm:inline">Logout</span>
-        </button>
+                  </button>
       </header>
 
       {/* ── Status Messages ── */}
@@ -334,6 +504,319 @@ export const AdminPage = () => {
         </div>
       </div>
 
+      {/* ── YouTube Search ── */}
+      <section className="bg-[#181818] rounded-2xl border border-white/5 shadow-xl overflow-hidden mb-6 md:mb-8">
+        <div className="p-5 border-b border-white/5">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-[#FF0000]/20 flex items-center justify-center">
+              <Search size={16} className="text-[#FF0000]" />
+            </div>
+            <h2 className="text-base font-bold text-white">Search YouTube</h2>
+          </div>
+
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => { setSearchMode('videos'); setYoutubeResults([]); }}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${searchMode === 'videos' ? 'bg-[#FF0000] text-white' : 'bg-white/5 text-[#b3b3b3] hover:bg-white/10'}`}
+            >
+              Single Songs
+            </button>
+            <button
+              onClick={() => { setSearchMode('playlists'); setYoutubeResults([]); }}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${searchMode === 'playlists' ? 'bg-[#FF0000] text-white' : 'bg-white/5 text-[#b3b3b3] hover:bg-white/10'}`}
+            >
+              Albums / Playlists
+            </button>
+          </div>
+
+          <form onSubmit={handleYoutubeSearch} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#b3b3b3]" size={16} />
+              <input
+                type="text"
+                placeholder="Search for songs on YouTube..."
+                className="
+                  w-full bg-[#0a0a0a] text-white placeholder:text-[#b3b3b3]
+                  py-2.5 pl-10 pr-4 rounded-xl text-sm outline-none
+                  border border-white/5 focus:border-[#FF0000]/50
+                  transition-all duration-200
+                "
+                value={youtubeQuery}
+                onChange={(e) => setYoutubeQuery(e.target.value)}
+                disabled={isSearchingYoutube}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!youtubeQuery.trim() || isSearchingYoutube}
+              className="px-6 rounded-xl font-bold text-sm bg-[#FF0000] text-white hover:bg-[#CC0000] transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSearchingYoutube ? <Loader2 className="animate-spin" size={18} /> : 'Search'}
+            </button>
+          </form>
+        </div>
+
+        {/* Results */}
+        {youtubeResults.length > 0 && !selectedPlaylist && (
+          <div className="p-5 max-h-[650px] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-black text-[#b3b3b3] uppercase tracking-wider">YouTube Results</h3>
+              <span className="text-[10px] text-[#b3b3b3] font-bold">{youtubeResults.length} found</span>
+            </div>
+            
+            {searchMode === 'videos' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {youtubeResults.map((result) => (
+                  <div
+                    key={result.id}
+                    onClick={() => handleYoutubeDownload(result)}
+                    className={`
+                      relative bg-white/5 rounded-xl overflow-hidden border border-white/5 
+                      group transition-all text-left w-full
+                      ${downloadingSongId === result.id ? 'ring-2 ring-accent-primary bg-accent-primary/5' : 'hover:border-white/10 hover:bg-white/[0.08]'}
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                    style={{ cursor: downloadingSongId !== null ? 'not-allowed' : 'pointer' }}
+                    role="button"
+                    tabIndex={downloadingSongId !== null ? -1 : 0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (downloadingSongId === null) handleYoutubeDownload(result);
+                      }
+                    }}
+                  >
+                    <div className="relative aspect-video">
+                      <img src={result.thumbnail} alt={result.title} className="w-full h-full object-cover" />
+                      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-bold text-white">
+                        {result.duration}
+                      </div>
+                      {downloadingSongId === result.id && (
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="animate-spin text-accent-primary" size={32} />
+                          {downloadProgress > 0 ? (
+                            <>
+                              <span className="text-sm font-black text-accent-primary">{downloadProgress}%</span>
+                              <span className="text-[10px] font-bold text-white uppercase tracking-widest">{downloadStage}</span>
+                            </>
+                          ) : (
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Processing</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <h4 className="text-sm font-bold text-white line-clamp-2 leading-snug mb-2 group-hover:text-accent-primary transition-colors">
+                        {result.title}
+                      </h4>
+                      <p className="text-[11px] text-[#b3b3b3] truncate mb-3">{result.channel}</p>
+                      <div className="flex gap-2">
+                        {/* Play Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Create a song object and play it directly in the website
+                            const songToPlay = {
+                              id: result.id,
+                              title: result.title,
+                              artist: result.channel,
+                              url: result.url,
+                              thumbnail: result.thumbnail,
+                              duration: result.duration
+                            };
+                            setCurrentSong(songToPlay);
+                            setIsPlaying(true);
+                          }}
+                          disabled={downloadingSongId !== null}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/10 text-white text-xs font-bold hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Play size={12} />
+                          Play
+                        </button>
+                        {/* Download Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleYoutubeDownload(result);
+                          }}
+                          disabled={downloadingSongId !== null || isSongInLibrary(result.title)}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isSongInLibrary(result.title)
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : downloadingSongId === result.id
+                                ? 'bg-accent-primary/50 text-white'
+                                : 'bg-accent-primary text-black hover:bg-accent-secondary'
+                          }`}
+                        >
+                          {downloadingSongId === result.id ? (
+                            <>
+                              <Loader2 size={12} className="animate-spin" />
+                              {downloadProgress}%
+                            </>
+                          ) : isSongInLibrary(result.title) ? (
+                            <>
+                              <CheckCircle size={12} />
+                              In Playlist
+                            </>
+                          ) : (
+                            <>
+                              <Download size={12} />
+                              Download
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {youtubeResults.map((result) => (
+                  <button
+                    key={result.id}
+                    onClick={() => fetchPlaylistVideos(result)}
+                    className="relative bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-white/10 hover:bg-white/[0.08] group transition-all text-left w-full"
+                  >
+                    <div className="relative aspect-video">
+                      <img src={result.thumbnail} alt={result.title} className="w-full h-full object-cover" />
+                      <div className="absolute inset-y-0 right-0 w-1/3 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1">
+                        <span className="text-lg font-black text-white">{result.videoCount}</span>
+                        <span className="text-[8px] font-black text-white uppercase tracking-widest">Videos</span>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <h4 className="text-sm font-bold text-white line-clamp-2 leading-snug mb-1 group-hover:text-accent-primary transition-colors">
+                        {result.title}
+                      </h4>
+                      <p className="text-[11px] text-[#b3b3b3] truncate">{result.channel}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Playlist Videos View */}
+        {selectedPlaylist && (
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => setSelectedPlaylist(null)}
+                className="text-xs font-bold text-accent-primary hover:underline"
+              >
+                ← Back to search
+              </button>
+              <h3 className="text-sm font-bold text-white">{selectedPlaylist.title}</h3>
+            </div>
+            
+            {isLoadingPlaylist ? (
+              <div className="flex flex-col items-center py-8 gap-3">
+                <Loader2 className="animate-spin text-accent-primary" size={24} />
+                <p className="text-xs text-[#b3b3b3]">Fetching album tracks...</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {playlistVideos.map((video) => (
+                  <button
+                    key={video.id}
+                    onClick={() => handleYoutubeDownload(video)}
+                    disabled={downloadingSongId !== null}
+                    className={`
+                      flex items-center justify-between p-3 rounded-xl bg-white/5 w-full text-left
+                      group transition-all
+                      ${downloadingSongId === video.id ? 'ring-2 ring-accent-primary bg-accent-primary/5' : 'hover:bg-white/[0.08]'}
+                    `}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold text-white truncate group-hover:text-accent-primary transition-colors">
+                          {video.title}
+                        </span>
+                        <span className="text-[10px] text-[#b3b3b3]">{video.duration}</span>
+                      </div>
+                    </div>
+                    
+                    {downloadingSongId === video.id ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 size={14} className="animate-spin text-accent-primary" />
+                        <span className="text-[10px] font-bold text-accent-primary uppercase tracking-tight">Adding...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-primary text-black text-[10px] font-bold hover:bg-accent-secondary transition-all">
+                        <Download size={14} />
+                        GET
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* ── Downloading Section ── */}
+      {downloadingSongs.length > 0 && (
+        <section className="bg-[#181818] rounded-2xl border border-white/5 shadow-xl overflow-hidden mb-6 md:mb-8">
+          <div className="p-5 border-b border-white/5">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-accent-primary/20 flex items-center justify-center">
+                <Download size={16} className="text-accent-primary" />
+              </div>
+              <h2 className="text-base font-bold text-white">Downloading</h2>
+              <span className="text-[10px] font-medium text-[#b3b3b3] uppercase tracking-wide">
+                {downloadingSongs.length} in progress
+              </span>
+            </div>
+            
+            <div className="space-y-3">
+              {downloadingSongs.map((song) => (
+                <div
+                  key={song.id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-white/5 w-full"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-full h-full bg-[#282828] flex items-center justify-center">
+                        <Music size={16} className="text-[#b3b3b3]" />
+                      </div>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-bold text-white truncate">
+                        {song.title}
+                      </span>
+                      <span className="text-[10px] text-[#b3b3b3] uppercase font-bold">
+                        {song.stage || 'Downloading'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-white">
+                      <Loader2 size={14} className="animate-spin text-accent-primary" />
+                      <span>{song.progress || 0}%</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setDownloadingSongs(prev => prev.filter(s => s.id !== song.id));
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-bold hover:bg-red-500/30 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Library Manager ── */}
       <section className="bg-[#181818] rounded-2xl border border-white/5 shadow-xl overflow-hidden">
         {/* Header */}
@@ -420,9 +903,6 @@ export const AdminPage = () => {
                         <div className="flex flex-col min-w-0">
                           <span className="font-bold text-sm text-white truncate">
                             {song.title}
-                          </span>
-                          <span className="text-xs text-[#b3b3b3] truncate">
-                            {song.artist || 'Unknown Artist'}
                           </span>
                         </div>
                       </div>

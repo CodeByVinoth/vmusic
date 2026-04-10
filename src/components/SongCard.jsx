@@ -126,12 +126,6 @@ export const SongCard = ({ song }) => {
         >
           {song.title}
         </h3>
-        <p
-          className="text-xs text-[#b3b3b3] truncate font-medium group-hover:text-white/70 transition-colors"
-          title={song.artist || 'Unknown Artist'}
-        >
-          {song.artist || 'Unknown Artist'}
-        </p>
       </div>
     </div>
   );

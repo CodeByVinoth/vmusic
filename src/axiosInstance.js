@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_KEY = import.meta.env.VITE_API_KEY;
+// Get API Key from env or use a default fallback matching the server
+const API_KEY = import.meta.env.VITE_API_KEY || 'song_app_secret_123';
 
 const api = axios.create({
   baseURL: '/api',

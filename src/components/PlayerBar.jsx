@@ -17,90 +17,27 @@ import { useMusic } from '../MusicContext';
 import { FullScreenPlayer } from './FullScreenPlayer';
 
 export const PlayerBar = () => {
-  const { currentSong, isPlaying, setIsPlaying, setCurrentSong, songs, likedSongs, toggleLike } = useMusic();
-  const audioRef = useRef(null);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(() => {
-    const saved = localStorage.getItem('volume');
-    return saved ? Number(saved) : 0.5;
-  });
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [isRepeat, setIsRepeat] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const { 
+    currentSong, 
+    isPlaying, 
+    setIsPlaying, 
+    likedSongs, 
+    toggleLike,
+    progress,
+    duration,
+    seek,
+    skipForward,
+    skipBack,
+    isShuffle,
+    setIsShuffle,
+    isRepeat,
+    setIsRepeat,
+    isMuted,
+    setIsMuted,
+    volume,
+    setVolume
+  } = useMusic();
   const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
-
-  // Save volume preference
-  useEffect(() => {
-    localStorage.setItem('volume', volume.toString());
-  }, [volume]);
-
-  // Sync audio element with state
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume;
-
-      if (isPlaying && currentSong?.url) {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-            if (error.name !== 'AbortError') {
-              console.error('Playback error:', error);
-              setIsPlaying(false);
-            }
-          });
-        }
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying, currentSong?.url, volume, isMuted, setIsPlaying]);
-
-  const onTimeUpdate = () => {
-    if (audioRef.current) {
-      setProgress(audioRef.current.currentTime);
-    }
-  };
-
-  const onLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const handleScrub = (e) => {
-    const time = Number(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setProgress(time);
-    }
-  };
-
-  const handleSkipForward = useCallback(() => {
-    if (!currentSong || songs.length === 0) return;
-    const currentIndex = songs.findIndex((s) => s.id === currentSong.id);
-    let nextIndex;
-    if (isShuffle) {
-      nextIndex = Math.floor(Math.random() * songs.length);
-    } else {
-      nextIndex = (currentIndex + 1) % songs.length;
-    }
-    setCurrentSong(songs[nextIndex]);
-    setIsPlaying(true);
-  }, [currentSong, songs, isShuffle, setCurrentSong, setIsPlaying]);
-
-  const handleSkipBack = () => {
-    if (!currentSong || songs.length === 0) return;
-    if (audioRef.current && audioRef.current.currentTime > 3) {
-      audioRef.current.currentTime = 0;
-      return;
-    }
-    const currentIndex = songs.findIndex((s) => s.id === currentSong.id);
-    const prevIndex = (currentIndex - 1 + songs.length) % songs.length;
-    setCurrentSong(songs[prevIndex]);
-    setIsPlaying(true);
-  };
-
   const formatTime = (time) => {
     if (!time || isNaN(time)) return '0:00';
     const min = Math.floor(time / 60);
@@ -108,24 +45,16 @@ export const PlayerBar = () => {
     return `${min}:${sec.toString().padStart(2, '0')}`;
   };
 
+  const handleScrub = (e) => {
+    seek(Number(e.target.value));
+  };
+
   const isLiked = currentSong && likedSongs.some((s) => s.id === currentSong.id);
 
-  // ── MOBILE MINI PLAYER ──
   if (!currentSong) return null;
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 w-full z-[100] select-none pb-safe">
-      <audio
-        ref={audioRef}
-        src={currentSong?.url}
-        onTimeUpdate={onTimeUpdate}
-        onLoadedMetadata={onLoadedMetadata}
-        onEnded={() =>
-          isRepeat
-            ? ((audioRef.current.currentTime = 0), audioRef.current.play())
-            : handleSkipForward()
-        }
-      />
 
       {/* ════════════════════════════════════
             MOBILE MINI PLAYER
@@ -286,7 +215,7 @@ export const PlayerBar = () => {
               </button>
 
               <button
-                onClick={handleSkipBack}
+                onClick={skipBack}
                 className="text-[#b3b3b3] hover:text-white transition-colors"
                 aria-label="Previous"
                 title="Previous"
@@ -307,7 +236,7 @@ export const PlayerBar = () => {
               </button>
 
               <button
-                onClick={handleSkipForward}
+                onClick={skipForward}
                 className="text-[#b3b3b3] hover:text-white transition-colors"
                 aria-label="Next"
                 title="Next"

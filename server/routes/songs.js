@@ -22,7 +22,6 @@ const fallbackSongs = [
   {
     id: 'fallback-1',
     title: 'Example Song',
-    artist: 'Generic Artist',
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&h=500&fit=crop',
     duration: 372
@@ -186,9 +185,8 @@ router.get('/songs', async (req, res) => {
 
         return {
           id: file.sha,
-          path: file.path, // <-- ADD THIS LINE
+          path: file.path,
           title: title,
-          artist: 'GitHub Artist',
           url: streamUrl,
           thumbnail: placeholders[index % placeholders.length],
           duration: 0,

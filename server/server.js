@@ -25,11 +25,13 @@ const authMiddleware = (req, res, next) => {
   const expectedKey = process.env.VITE_API_KEY;
 
   console.log(`[Auth] Request: ${req.method} ${path}`);
+  console.log(`[Auth] API Key Provided: ${apiKey ? 'Yes' : 'No'}`);
+  console.log(`[Auth] JWT Provided: ${authHeader ? 'Yes' : 'No'}`);
 
   // 1. PUBLIC ROUTES (NO AUTH REQUIRED)
   // Check if it's the songs list or login route
-  if (path === '/songs' || path === '/admin/login' || req.path.endsWith('manifest.webmanifest')) {
-    console.log(`[Auth] Public Access Granted: ${path}`);
+  if (path === '/songs' || path === '/admin/login' || path === '/admin/search-youtube' || path === '/admin/search-youtube-playlists' || path === '/admin/youtube-playlist-videos' || path === '/admin/download' || req.path.endsWith('manifest.webmanifest')) {
+    console.log(`[Auth] DEBUG - Public Access Granted for path: ${path}`);
     return next();
   }
 
@@ -51,9 +53,17 @@ const authMiddleware = (req, res, next) => {
     return jwt.verify(token, secret, (err, user) => {
       if (err) {
         console.warn(`[Auth] JWT Invalid: ${err.message}`);
-        // If it's a stream request, we might want to check the API key as well
-        if (path === '/stream') return checkApiKey();
-        return res.status(403).json({ error: 'Invalid or expired token' });
+        // If JWT fails but we have an API key, we might want to check that instead
+        // but for safety, if they *tried* to use a token and failed, we should tell them.
+        if (apiKey && apiKey === expectedKey) {
+          console.log(`[Auth] JWT failed but valid API key found. Falling back for ${path}`);
+          return next();
+        }
+        return res.status(403).json({ 
+          error: 'Forbidden', 
+          message: 'Your session has expired or is invalid. Please log in again.',
+          code: 'AUTH_TOKEN_INVALID'
+        });
       }
       req.user = user;
       console.log(`[Auth] JWT Admin Access Granted: ${user.username}`);

@@ -531,9 +531,6 @@ export const MainView = () => {
                             >
                               {song.title}
                             </span>
-                            <span className="text-xs text-[#b3b3b3] truncate">
-                              {song.artist || 'Unknown Artist'}
-                            </span>
                           </div>
                         </div>
 
