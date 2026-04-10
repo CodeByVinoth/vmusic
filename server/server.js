@@ -10,13 +10,13 @@ import adminRoute from './routes/admin.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-console.log('--- VMUSIC SERVER INITIALIZED (ROBUST FIX) ---');
+console.log('--- VMUSIC SERVER RUNNING (ROBUST FIX) ---');
 
 // ✅ Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json());
 
-// ✅ AUTH MIDDLEWARE (REPAIRED & ROBUST)
+// ✅ AUTH MIDDLEWARE (ROBUST & COMPLETE)
 const authMiddleware = (req, res, next) => {
   // Normalize path by removing trailing slash and ignoring query params
   const path = req.path.replace(/\/$/, '') || '/';
@@ -24,26 +24,22 @@ const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
   const expectedKey = process.env.VITE_API_KEY;
 
-  console.log(`[Auth] Checking path: ${path} (Original: ${req.path})`);
+  console.log(`[Auth] Request: ${req.method} ${path}`);
 
   // 1. PUBLIC ROUTES (NO AUTH REQUIRED)
-  const isPublic = 
-    path === '/songs' || 
-    path === '/admin/login' || 
-    path.endsWith('manifest.webmanifest');
-
-  if (isPublic) {
-    console.log(`[Auth] Public access granted: ${path}`);
+  if (path === '/songs' || path === '/admin/login' || req.path.endsWith('manifest.webmanifest')) {
+    console.log(`[Auth] Public Access: ${path}`);
     return next();
   }
 
-  // 2. STREAMING ACCESS (API KEY IN QUERY)
+  // 2. STREAMING ACCESS (API KEY IN QUERY STRING)
+  // This is critical for the audio player to work
   if (path === '/stream' && req.query.key) {
     if (req.query.key === expectedKey) {
-      console.log(`[Auth] Stream access granted with key: ${path}`);
+      console.log(`[Auth] Stream Access Granted: ${path}`);
       return next();
     }
-    console.warn(`[Auth] Stream access denied (invalid key): ${path}`);
+    console.warn(`[Auth] Stream Access Denied (Invalid Key): ${path}`);
   }
 
   // 3. JWT AUTH (FOR ADMIN ACTIONS)
@@ -53,64 +49,55 @@ const authMiddleware = (req, res, next) => {
 
     return jwt.verify(token, secret, (err, user) => {
       if (err) {
-        console.warn(`[Auth] JWT Verification Failed: ${err.message}`);
-        // If it's a stream, we might still want to allow it via API key if JWT fails
-        if (path === '/stream') return checkApiKeyFallback();
+        console.warn(`[Auth] JWT Invalid: ${err.message}`);
+        // If it's a stream, we might still want to check the API key header
+        if (path === '/stream') return checkApiKeyHeader();
         return res.status(403).json({ error: 'Invalid or expired token' });
       }
       req.user = user;
-      console.log(`[Auth] JWT Access granted for: ${user.username}`);
+      console.log(`[Auth] JWT Admin Access: ${user.username}`);
       return next();
     });
   }
 
-  // 4. API KEY FALLBACK (FOR GENERAL API USAGE)
-  function checkApiKeyFallback() {
+  // 4. API KEY HEADER AUTH (FOR GENERAL API USAGE)
+  function checkApiKeyHeader() {
     if (!expectedKey) {
-      console.error('CRITICAL: VITE_API_KEY is not set on the server!');
-      return res.status(500).json({
-        error: 'Server Config Error',
-        message: 'API key missing in environment'
-      });
+      console.error('CRITICAL: VITE_API_KEY not set on server');
+      return res.status(500).json({ error: 'Server Config Error', message: 'API key missing' });
     }
 
     if (apiKey && apiKey === expectedKey) {
-      console.log(`[Auth] API Key access granted: ${path}`);
+      console.log(`[Auth] API Key Access: ${path}`);
       return next();
     }
 
-    console.warn(`[Auth] Unauthorized access attempt: ${path}`);
-    return res.status(403).json({
-      error: 'Unauthorized',
-      message: 'Invalid or missing API key'
-    });
+    console.warn(`[Auth] Unauthorized Access: ${path}`);
+    return res.status(403).json({ error: 'Unauthorized', message: 'Invalid or missing API key' });
   }
 
-  checkApiKeyFallback();
+  checkApiKeyHeader();
 };
 
-// ✅ Apply middleware to all /api routes
+// ✅ Apply middleware
 app.use('/api', authMiddleware);
 
-// ✅ Routes (CORRECTED MOUNTING)
-app.use('/api', songsRoute); // This handles /api/songs and /api/stream
-app.use('/api/admin', adminRoute); // This handles /api/admin/login, etc.
+// ✅ ROUTES
+app.use('/api', songsRoute);   // Handles /api/songs and /api/stream
+app.use('/api/admin', adminRoute); // Handles /api/admin/...
 
 // ✅ Root test
 app.get('/', (req, res) => {
-  res.send('VMusic API Running ✅');
+  res.send('VMusic API Working ✅');
 });
 
 // ✅ Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Global Error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message
-  });
+  res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 
-// ✅ Start server (local only)
+// ✅ Start server (local development only)
 const isMain =
   process.argv[1] &&
   process.argv[1] === fileURLToPath(import.meta.url);
